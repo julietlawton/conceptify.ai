@@ -1,13 +1,12 @@
 "use client"
 
-import { useCallback, useState, useRef, useEffect } from "react"
+import { useCallback, useState, useRef, useEffect, SetStateAction, RefObject } from "react"
 import dynamic from "next/dynamic"
 import ReactMarkdown from "react-markdown";
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import rehypeHighlight from "rehype-highlight";
-//import 'highlight.js/styles/github.css';
 import { GraphToolbar } from "./graph-toolbar"
 import {
     Dialog,
@@ -27,6 +26,37 @@ import { useChat, useCurrentGraph } from "../context/ChatContext"
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
+import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
+import { UnfoldHorizontal } from "lucide-react";
+
+interface UIGraphNode extends NodeObject {
+    id: string;
+    name: string;
+    info: string;
+    showRelationships?: boolean;
+}
+
+interface UIGraphLink extends LinkObject {
+    label: string;
+}
+
+interface UIGraph {
+    nodes: UIGraphNode[];
+    links: UIGraphLink[];
+}
+
+interface NodeEdge {
+    nodeId: string;
+    label: string;
+    direction: "source" | "target";
+}
+
+interface NewNodeData {
+    name: string;
+    info: string;
+    showRelationships: boolean;
+    edges: NodeEdge[];
+}
 
 // const colors = [
 //     //" #c1e7ee",
@@ -61,24 +91,54 @@ const colors = [
     " #df5734",
     " #9c0096",
     " #ff7f00",
-    " #ffde21",
+    " #eccd1d",
     " #20b2ad",
     // " #800080",
-    " #000066",
+    // " #000066",
     " #e37bd0",
     " #129edf",
     " #1912df",
 ]
 
-// {node.info}
 
-const NodeTooltip = ({ node, graphData }: { node: GraphNode, graphData: KnowledgeGraph }) => {
+const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGraph }) => {
 
-    console.log(graphData);
+    const relatedLinks = graphData.links.filter((link: UIGraphLink) => {
+        const sourceId =
+        typeof link.source === "object" && link.source
+            ? link.source.id
+            : link.source;
+        const targetId =
+        typeof link.target === "object" && link.target
+            ? link.target.id
+            : link.target;
+        return sourceId === node.id || targetId === node.id;
+    })
+    .map((link: UIGraphLink) => {
+        let sourceName: string;
+        if (typeof link.source === "object" && link.source) {
+            sourceName = link.source.name;
+        } else {
+        // Lookup in graphData.nodes if link.source is a string
+            const found = graphData.nodes.find(n => n.id === link.source);
+            sourceName = found ? found.name : String(link.source);
+        }
 
-    const relatedLinks = graphData.links.filter((link: GraphLink) => {
-        return link.source.id === node.id || link.target.id === node.id;
+        let targetName: string;
+        if (typeof link.target === "object" && link.target) {
+            targetName = link.target.name;
+        } else {
+            const found = graphData.nodes.find(n => n.id === link.target);
+            targetName = found ? found.name : String(link.target);
+        }
+
+        let label: string;
+        label = link.label;
+
+        // Attach the precomputed names to the link object
+        return {label, sourceName, targetName};
     });
+
 
     return (
         <div
@@ -95,43 +155,78 @@ const NodeTooltip = ({ node, graphData }: { node: GraphNode, graphData: Knowledg
                 {node.info}
             </ReactMarkdown>
 
-            {relatedLinks.length > 0 ? (
+            
+            {node.showRelationships && relatedLinks.length > 0 ? (
                 <div className="mt-2">
                     <h4 className="text-md font-semibold">Relationships:</h4>
                     <ul className="list-disc list-outside pl-5 space-y-1">
                         {relatedLinks.map((rel, index) => (
                             <li key={index} className="text-gray-700">
                                 <ReactMarkdown className="prose prose-sm inline">
-                                    {`**${rel.source.name}** ${rel.label} **${rel.target.name}**`}
+                                    {`**${rel.sourceName}** ${rel.label} **${rel.targetName}**`}
                                 </ReactMarkdown>
                             </li>
                         ))}
                     </ul>
                 </div>
-            ) : (
+            ) : node.showRelationships ? (
                 <p className="text-gray-500">No relationships found.</p>
-            )}
+            ) : null }
         </div>
     );
 };
 
+function stripUIGraph(uiGraph: UIGraph): KnowledgeGraph {
+    return {
+      nodes: uiGraph.nodes.map((node) => ({
+        id: node.id,
+        name: node.name,
+        info: node.info,
+      })),
+      links: uiGraph.links.map((link) => {
+        // Extract source and target as strings.
+        const sourceId =
+          typeof link.source === "object" ? link.source.id : link.source;
+        const targetId =
+          typeof link.target === "object" ? link.target.id : link.target;
+        return {
+          source: String(sourceId),
+          target: String(targetId),
+          label: link.label,
+        };
+      }),
+    };
+}
 
-export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isFullScreen: boolean, onToggleFullScreen: () => void }) {
+
+export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFullScreen: boolean, onToggleFullScreen: () => void}) {
     //   const [graphData, setGraphData] = useState(initialData)
     const { currentConversationId } = useChat();
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
+    const [uiGraphData, setUiGraphData] = useState<UIGraph>(() => {
+        // Clone the pure data
+        const cloned = JSON.parse(JSON.stringify(graphData));
+        // Add a default for each node if it doesn't already have it
+        cloned.nodes = cloned.nodes.map((node: any) => ({
+          ...node,
+          showRelationships:
+            node.showRelationships !== undefined ? node.showRelationships : true,
+        }));
+        return cloned;
+    });
+
     const [highlightNodes, setHighlightNodes] = useState(new Set())
     const [highlightLinks, setHighlightLinks] = useState(new Set())
-    const [hoverNode, setHoverNode] = useState(null)
-    const [selectedNode, setSelectedNode] = useState(null)
-    const [hoverLink, setHoverLink] = useState(null)
+    const [hoverNode, setHoverNode] = useState<UIGraphNode | null>(null)
+    const [selectedNode, setSelectedNode] = useState<UIGraphNode | null>(null)
+    const [hoverLink, setHoverLink] = useState<UIGraphLink | null>(null)
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [dialogMode, setDialogMode] = useState<"add" | "edit">("add")
-    const [newNodeData, setNewNodeData] = useState({ name: "", info: "", edges: [] })
-    const graphRef = useRef(null)
-    const forceGraphRef = useRef(null)
+    const [newNodeData, setNewNodeData] = useState<NewNodeData>({ name: "", info: "", showRelationships: true, edges: [] })
+    const graphRef = useRef<HTMLElement | null>(null);
+    const forceGraphRef = useRef<ForceGraphMethods| null>(null);
 
     const updateDimensions = useCallback(() => {
         if (graphRef.current) {
@@ -143,145 +238,207 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
     }, [])
 
     useEffect(() => {
-        updateDimensions()
-        window.addEventListener("resize", updateDimensions)
-        return () => window.removeEventListener("resize", updateDimensions)
+        updateDimensions();
+        window.addEventListener("resize", updateDimensions);
+        return () => window.removeEventListener("resize", updateDimensions);
     }, [updateDimensions])
 
-    //   const handleNodeHover = useCallback(
-    //     (node) => {
-    //       setHighlightNodes(new Set(node ? [node.id] : []))
-    //       setHighlightLinks(
-    //         new Set(
-    //           node
-    //             ? graphData.links
-    //                 .filter((link) => link.source.id === node.id || link.target.id === node.id)
-    //                 .map((link) => link.id || `${link.source.id}-${link.target.id}`)
-    //             : [],
-    //         ),
-    //       )
-    //       setHoverNode(node || null)
-    //     },
-    //     [graphData.links],
-    //   )
+    useEffect(() => {
+        // Clone pure graph data and add default value for showRelationships
+        const cloned = JSON.parse(JSON.stringify(graphData));
+        cloned.nodes = cloned.nodes.map((node: any) => ({
+          ...node,
+          // If showRelationships is not defined, default to true
+          showRelationships: node.showRelationships !== undefined ? node.showRelationships : true,
+        }));
+        setUiGraphData(cloned);
+    }, [graphData]);
 
     const handleNodeHover = useCallback(
-        (node) => {
-            // Highlight the hovered node and its related links.
-            setHighlightNodes(new Set(node ? [node.id] : []));
-            setHighlightLinks(
-                new Set(
-                    node
-                        ? graphData.links
-                            .filter(
-                                (link) =>
-                                    link.source.id === node.id || link.target.id === node.id
-                            )
-                            .map(
-                                (link) => link.id || `${link.source.id}-${link.target.id}`
-                            )
-                        : []
-                )
-            );
-            setHoverNode(node || null);
+        (node: UIGraphNode | null, previousNode?: UIGraphNode | null) => {
+          // Set highlight for the hovered node, if any
+          setHighlightNodes(new Set(node ? [node.id] : []));
+          
+          // Filter links that involve the hovered node, safely extracting IDs
+          setHighlightLinks(
+            new Set(
+              node
+                ? uiGraphData.links
+                    .filter((link) => {
+                      const sourceId =
+                        typeof link.source === "object" && link.source
+                          ? link.source.id
+                          : link.source;
+                      const targetId =
+                        typeof link.target === "object" && link.target
+                          ? link.target.id
+                          : link.target;
+                      return sourceId === node.id || targetId === node.id;
+                    })
+                    .map((link) => {
+                      const sourceId =
+                        typeof link.source === "object" && link.source
+                          ? link.source.id
+                          : link.source;
+                      const targetId =
+                        typeof link.target === "object" && link.target
+                          ? link.target.id
+                          : link.target;
+                      // If link.id is missing, create one from source and target IDs
+                      return link.id || `${sourceId}-${targetId}`;
+                    })
+                : []
+            )
+          );
 
-            // Freeze the node's position when hovered,
-            // or unfreeze all nodes if not hovering.
-            if (node) {
+            // Set the hover state
+            setHoverNode(node);
+
+            if (node){
                 node.fx = node.x;
                 node.fy = node.y;
             } else {
-                graphData.nodes.forEach((n) => {
-                    n.fx = null;
-                    n.fy = null;
+                uiGraphData.nodes.forEach((n) => {
+                    n.fx = undefined;
+                    n.fy = undefined;
                 });
             }
-
-            // Reheat the simulation to apply the changes.
-            if (forceGraphRef.current) {
-                forceGraphRef.current.d3ReheatSimulation();
-            }
+      
+          // Reheat the simulation to apply changes
+          if (forceGraphRef.current) {
+            forceGraphRef.current.d3ReheatSimulation();
+          }
         },
-        [graphData.links, graphData.nodes]
+        [uiGraphData.links, uiGraphData.nodes] // Include additional dependencies if needed
     );
-
-    const handleNodeClick = useCallback((node) => {
-        setSelectedNode(node)
+    
+    const handleNodeClick = useCallback((node: UIGraphNode) => {
+        setSelectedNode(node);
     }, [])
 
-    const handleLinkHover = useCallback((link) => {
-        setHighlightNodes(new Set(link ? [link.source.id, link.target.id] : []))
-        setHighlightLinks(new Set(link ? [link.id || `${link.source.id}-${link.target.id}`] : []))
-        setHoverLink(link || null)
+    const handleLinkHover = useCallback((link: UIGraphLink | null) => {
+        if (!link) {
+            setHighlightNodes(new Set());
+            setHighlightLinks(new Set());
+            setHoverLink(null);
+            return;
+        }
+        const sourceId =
+            typeof link.source === "object" && link.source
+            ? link.source.id
+            : link.source;
+        const targetId =
+            typeof link.target === "object" && link.target
+            ? link.target.id
+            : link.target;
+
+        setHighlightNodes(new Set([sourceId, targetId].filter(Boolean) as string[]));
+        setHighlightLinks(new Set([link.id || `${sourceId}-${targetId}`]));
+        setHoverLink(link);
     }, [])
 
-    const nodeColor = useCallback((node) => {
-        //return colors[node.group - 1] || colors[0]
-        const hash = node.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
-        return colors[hash % colors.length]
+    const nodeColor = useCallback((node: UIGraphNode) => {
+        // Prevents node colors from switching in between renders
+        const hash = node.id.split("").reduce((acc: any, char: string) => acc + char.charCodeAt(0), 0);
+        return colors[hash % colors.length];
     }, [])
 
     const linkColor = useCallback(
-        (link) => {
-            return highlightLinks.has(link.id || `${link.source.id}-${link.target.id}`) ? " #FFA500" : " #b5b3b3"
+        (link: UIGraphLink) => {
+            const sourceId =
+                typeof link.source === "object" && link.source
+                    ? link.source.id
+                    : link.source;
+            const targetId =
+                typeof link.target === "object" && link.target
+                    ? link.target.id
+                    : link.target;
+            return highlightLinks.has(link.id || `${sourceId}-${targetId}`) ? " #FFA500" : " #dedfde"
         },
         [highlightLinks],
     )
 
+    const handleResetView = useCallback(() => {
+        if (forceGraphRef.current) {
+            forceGraphRef.current.zoomToFit();
+        }
+    }, [])
+
     const handleAddNode = () => {
-        setDialogMode("add")
-        setNewNodeData({ name: "", info: "", edges: [] })
-        setIsDialogOpen(true)
+        setDialogMode("add");
+        setNewNodeData({ name: "", info: "", showRelationships: true, edges: [] });
+        setIsDialogOpen(true);
     }
 
     const handleEditNode = () => {
         if (selectedNode) {
-            setDialogMode("edit")
-            console.log("Handle edit node");
-            const nodeEdges = graphData.links
-                .filter((link) => link.source.id === selectedNode.id || link.target.id === selectedNode.id)
-                .map((link) => ({
-                    nodeId: link.source.id === selectedNode.id ? link.target.id : link.source.id,
-                    label: link.label,
-                    direction: link.source.id === selectedNode.id ? "source" : "target",
-                }))
-            console.log("NewNodeData");
-            console.log({ name: selectedNode.name, info: selectedNode.info, edges: nodeEdges });
-            setNewNodeData({ name: selectedNode.name, info: selectedNode.info, edges: nodeEdges })
-            setIsDialogOpen(true)
+            setDialogMode("edit");
+
+            const nodeEdges: NodeEdge[] = uiGraphData.links
+                .filter((link) => {
+                    const sourceId =
+                        typeof link.source === "object" && link.source ? link.source.id : link.source;
+                    const targetId =
+                        typeof link.target === "object" && link.target ? link.target.id : link.target;
+                    // Only keep links where both sourceId and targetId are defined, and one of them matches the selected node
+                    return Boolean(sourceId) && Boolean(targetId) && (sourceId === selectedNode.id || targetId === selectedNode.id);
+                })
+                .map((link) => {
+                    const sourceId =
+                        typeof link.source === "object" && link.source ? link.source.id : link.source;
+                    const targetId =
+                        typeof link.target === "object" && link.target ? link.target.id : link.target;
+                    return {
+                        nodeId: sourceId === selectedNode.id ? String(targetId) : String(sourceId),
+                        label: link.label,
+                        direction: sourceId === selectedNode.id ? "source" : "target",
+                    };
+                });
+
+            setNewNodeData({ 
+                name: selectedNode.name, 
+                info: selectedNode.info, 
+                showRelationships: selectedNode.showRelationships ?? true, 
+                edges: nodeEdges 
+            });
+            setIsDialogOpen(true);
         }
     }
 
     const handleDeleteNode = () => {
         if (selectedNode) {
-            const newNodes = graphData.nodes.filter((node) => node.id !== selectedNode.id)
-            const newLinks = graphData.links.filter(
-                (link) => link.source.id !== selectedNode.id && link.target.id !== selectedNode.id,
-            )
-            if (currentConversationId) {
-                updateConversationGraphData(currentConversationId, { nodes: newNodes, links: newLinks });
-            }
-
-            // setGraphData({ nodes: newNodes, links: newLinks })
-            setSelectedNode(null)
+          const newNodes = uiGraphData.nodes.filter(
+            (node) => node.id !== selectedNode.id
+          );
+          const newLinks = uiGraphData.links.filter((link) => {
+            const sourceId =
+              typeof link.source === "object" ? link.source.id : link.source;
+            const targetId =
+              typeof link.target === "object" ? link.target.id : link.target;
+            return sourceId !== selectedNode.id && targetId !== selectedNode.id;
+          });
+          
+          const newUIGraph: UIGraph = { nodes: newNodes, links: newLinks };
+          const pureGraph = stripUIGraph(newUIGraph);
+          
+          if (currentConversationId) {
+            updateConversationGraphData(currentConversationId, pureGraph);
+          }
+          
+          setSelectedNode(null);
         }
-    }
-
-    const handleResetView = useCallback(() => {
-        if (forceGraphRef.current) {
-            forceGraphRef.current.zoomToFit()
-        }
-    }, [])
+    };
 
     const handleDialogSubmit = () => {
-        const avgX = graphData.nodes.reduce((sum, node) => sum + node.x, 0) / graphData.nodes.length
-        const avgY = graphData.nodes.reduce((sum, node) => sum + node.y, 0) / graphData.nodes.length
+        const avgX = uiGraphData.nodes.reduce((sum, node) => sum + (node.x ?? 0), 0) / uiGraphData.nodes.length
+        const avgY = uiGraphData.nodes.reduce((sum, node) => sum + (node.y ?? 0), 0) / uiGraphData.nodes.length
 
         if (dialogMode === "add") {
             const newNode = {
                 id: crypto.randomUUID(),
                 name: newNodeData.name,
                 info: newNodeData.info,
+                showRelationships: newNodeData.showRelationships,
                 x: avgX + (Math.random() - 0.5) * 100,
                 y: avgY + (Math.random() - 0.5) * 100,
             }
@@ -293,7 +450,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
             // Look up the "other" node using edge.nodeId.
             const newLinks = newNodeData.edges
                 .map((edge) => {
-                    const otherNode = graphData.nodes.find((node) => node.id === edge.nodeId);
+                    const otherNode = uiGraphData.nodes.find((node) => node.id === edge.nodeId);
                     if (!otherNode) {
                         console.warn("Other node not found for edge", edge);
                         return null;
@@ -307,69 +464,87 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
                     };
                 })
                 .filter((link) => link !== null);
-
-            //   const newLinks = newNodeData.edges.map((edge) => ({
-            //     source: edge.direction === "source" ? newNodeId : edge.nodeId,
-            //     target: edge.direction === "target" ? newNodeId : edge.nodeId,
-            //     label: edge.label,
-            //   }))
+            
+            const newUIGraph: UIGraph = { 
+                nodes: [...uiGraphData.nodes, newNode], 
+                links: [...uiGraphData.links, ...newLinks],
+            };
+            const pureGraph = stripUIGraph(newUIGraph);
 
             if (currentConversationId) {
-                updateConversationGraphData(currentConversationId, {
-                    nodes: [...graphData.nodes, newNode],
-                    links: [...graphData.links, ...newLinks],
-                });
+                updateConversationGraphData(currentConversationId, pureGraph);
             }
-            // setGraphData((prevData) => ({
-            //     nodes: [...prevData.nodes, newNode],
-            //     links: [...prevData.links, ...newLinks],
-            //   }));
-
-            //   setGraphData((prevData) => ({
-            //     nodes: [...prevData.nodes, newNode],
-            //     links: [...prevData.links, ...newLinks],
-            //   }))
 
 
         } else if (dialogMode === "edit" && selectedNode) {
-            const updatedNodes = graphData.nodes.map((node) =>
+            const updatedNodes = uiGraphData.nodes.map((node) =>
                 node.id === selectedNode.id
                     ? {
                         ...node,
                         name: newNodeData.name,
                         info: newNodeData.info,
+                        showRelationships: newNodeData.showRelationships,
                     }
                     : node,
             )
-            const updatedLinks = graphData.links.filter(
-                (link) => link.source.id !== selectedNode.id && link.target.id !== selectedNode.id,
-            )
-            const newLinks = newNodeData.edges.map((edge) => ({
-                source: edge.direction === "source" ? selectedNode.id : edge.nodeId,
-                target: edge.direction === "target" ? selectedNode.id : edge.nodeId,
-                label: edge.label,
-            }))
-            // debug me
-            console.log("Updated links", updatedLinks);
-            console.log("New links", newLinks);
-            if (currentConversationId) {
-                updateConversationGraphData(currentConversationId, {
-                    nodes: updatedNodes,
-                    links: [...updatedLinks, ...newLinks],
+            const updatedLinks = uiGraphData.links.filter((link) => {
+                // Safely extract IDs from the link
+                const sourceId = typeof link.source === "object" && link.source ? link.source.id : link.source;
+                const targetId = typeof link.target === "object" && link.target ? link.target.id : link.target;
+                // Remove all edges that involve the selected node
+                return sourceId !== selectedNode.id && targetId !== selectedNode.id;
+              });
+              
+              const newLinks = newNodeData.edges
+              .map((edge) => {
+                const sourceId =
+                  typeof edge.direction === "string" && edge.direction === "source"
+                    ? selectedNode.id
+                    : edge.nodeId;
+                const targetId =
+                  typeof edge.direction === "string" && edge.direction === "target"
+                    ? selectedNode.id
+                    : edge.nodeId;
+            
+                // Ensure sourceId and targetId are valid
+                if (!sourceId || !targetId) return null;
+            
+                // Check if an edge already exists between these nodes in updatedLinks.
+                const edgeAlreadyExists = updatedLinks.some((link) => {
+                  const existingSource =
+                    typeof link.source === "object" && link.source ? link.source.id : link.source;
+                  const existingTarget =
+                    typeof link.target === "object" && link.target ? link.target.id : link.target;
+                  return existingSource === sourceId && existingTarget === targetId;
                 });
+            
+                if (edgeAlreadyExists) {
+                  console.warn("Edge already exists between these nodes", edge);
+                  return null;
+                }
+            
+                return {
+                  source: String(sourceId),
+                  target: String(targetId),
+                  label: edge.label,
+                } as UIGraphLink;
+              })
+              .filter((link): link is UIGraphLink => link !== null);
+
+            const newUIGraph: UIGraph = { 
+                nodes: updatedNodes, 
+                links: [...updatedLinks, ...newLinks],
+            };
+            const pureGraph = stripUIGraph(newUIGraph);
+
+            if (currentConversationId) {
+                updateConversationGraphData(currentConversationId, pureGraph);
             }
-            //   setGraphData((prevData) => ({
-            //     nodes: [updatedNodes],
-            //     links: [...prevData.links, ...newLinks],
-            //   }));
+
             setSelectedNode(null);
         }
         setIsDialogOpen(false);
     }
-
-    const handleEngineStop = useCallback(() => {
-        forceGraphRef.current.d3ReheatSimulation()
-    }, [])
 
     const handleAddEdge = () => {
         setNewNodeData((prev) => ({
@@ -378,14 +553,14 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
         }))
     }
 
-    const handleRemoveEdge = (index) => {
+    const handleRemoveEdge = (index: number) => {
         setNewNodeData((prev) => ({
             ...prev,
             edges: prev.edges.filter((_, i) => i !== index),
         }))
     }
 
-    const handleEdgeChange = (index, field, value) => {
+    const handleEdgeChange = (index: number, field: string, value: string) => {
         setNewNodeData((prev) => ({
             ...prev,
             edges: prev.edges.map((edge, i) => (i === index ? { ...edge, [field]: value } : edge)),
@@ -394,7 +569,6 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
 
     const handleDeleteGraph = () => {
         if (currentConversationId) {
-            console.log("Deleting graph");
             updateConversationGraphData(currentConversationId, null);
         }
     };
@@ -413,9 +587,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
             />
             <div className="flex-grow">
                 <ForceGraph2D
-                    key={currentConversationId}
                     ref={forceGraphRef}
-                    graphData={graphData}
+                    graphData={uiGraphData}
                     nodeColor={nodeColor}
                     linkColor={linkColor}
                     nodeLabel={null}
@@ -423,19 +596,19 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
                     onNodeClick={handleNodeClick}
                     onLinkHover={handleLinkHover}
                     linkWidth={2}
-                    nodeRelSize={8}
+                    nodeRelSize={6}
                     width={dimensions.width}
                     height={dimensions.height}
-                    d3AlphaDecay={0.05}
-                    d3VelocityDecay={0.5}
-                    //   d3Force="charge"
+                    // d3AlphaDecay={0.05}
+                    // d3VelocityDecay={0.5}
+                    //d3Force="charge"
                     d3Force={(force) => {
-                        force("link").distance(100)
-                        force("charge").strength(500)
-                        force("center").strength(0.1)
+                        force("link").distance(800)
+                        force("charge").strength(-400)
+                        //force("center").strength(0.1)
                     }}
-                    zoom={0.7}
-                    onEngineStop={handleEngineStop}
+                    //zoom={1}
+                    // onEngineStop={handleEngineStop}
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.name;
                         const fontSize = 14 / globalScale;
@@ -446,7 +619,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
                         const lineHeight = fontSize * 1.2;
 
                         // Function to wrap text without splitting words
-                        const wrapText = (context, text, maxWidth) => {
+                        const wrapText = (context: CanvasRenderingContext2D, text: string, maxWidth: number) => {
                             const words = text.split(" ");
                             const lines = [];
                             let currentLine = words[0];
@@ -535,7 +708,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
                     linkCanvasObjectMode={() => "after"}
                 />
             </div>
-            {hoverNode && <NodeTooltip node={hoverNode} graphData={graphData} />}
+            {hoverNode && <NodeTooltip node={hoverNode} graphData={uiGraphData} />}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[700px] w-11/12 max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -562,18 +735,18 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
                         <div className="grid grid-cols-4 items-start gap-4">
                             <div className="flex items-start justify-end gap-1">
                                 <Label htmlFor="info" className="whitespace-nowrap">Info</Label>
-                                {/* <div className="relative group">
-                        <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-1 -translate-y-1/4" />
-                        <div className="absolute left-1/2 -top-[140px] w-[250px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
-                            <p>Supports:</p>
-                            <ul className="mt-1 list-disc list-inside">
-                            <li>Markdown (e.g., <strong>bold</strong>, <em>italic</em>)</li><br></br>
-                            <li>LaTeX (e.g., $(1+x)^2$)</li><br></br>
-                            <li>Code Blocks (e.g., <code>```python print("Hello") ```</code>)</li><br></br>
-                            <li>Images (e.g., <code>![alt text](https://example.com/image.png)</code>)</li>
-                            </ul>
-                        </div>
-                    </div> */}
+                                <div className="relative group">
+                                    <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-1 -translate-y-1/4" />
+                                    <div className="absolute left-1/2 -top-[140px] w-[250px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
+                                        <p>Supports:</p>
+                                        <ul className="mt-1 list-disc list-inside">
+                                        <li>Markdown (e.g., <strong>bold</strong>, <em>italic</em>)</li><br></br>
+                                        <li>LaTeX (e.g., $(1+x)^2$)</li><br></br>
+                                        <li>Code Blocks (e.g., <code>```python print("Hello") ```</code>)</li><br></br>
+                                        <li>Images (e.g., <code>![alt text](https://example.com/image.png)</code>)</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
 
                             <Textarea
@@ -632,6 +805,22 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen }: { isF
                                 <Button onClick={handleAddEdge}>Add Edge</Button>
                             </div>
                         </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="showRelationships" className="text-right">
+                                Show Relationships
+                            </Label>
+                            <div className="col-span-3">
+                                <input
+                                type="checkbox"
+                                id="showRelationships"
+                                checked={newNodeData.showRelationships}
+                                onChange={(e) =>
+                                    setNewNodeData((prev) => ({ ...prev, showRelationships: e.target.checked }))
+                                }
+                                className="h-5 w-5 accent-black"
+                                />
+                            </div>
+                            </div>
                     </div>
                     <DialogFooter className="sticky bottom-0 pt-2">
                         <Button onClick={handleDialogSubmit}>{dialogMode === "add" ? "Add" : "Update"}</Button>

@@ -22,7 +22,7 @@ const GraphSchema = z.object({
 export async function POST(req: Request) {
     const { assistantMessage, existingGraph }: { assistantMessage: string; existingGraph?: KnowledgeGraph } = await req.json();
 
-    const graph_prompt = existingGraph ? 
+    const graph_prompt = (existingGraph && existingGraph.nodes.length > 0)  ? 
         `You are updating an existing knowledge graph. 
         The graph consists of **nodes (concepts)** and **edges (relationships between concepts)**.
         

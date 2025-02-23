@@ -61,6 +61,7 @@ export default function SideNav() {
                     Object.values(conversations)
                     .sort((a, b) => getLastMessageTime(b) - getLastMessageTime(a))
                     .map((conv) => (
+                        //Object.values(conversations).map((conv) => (
                         <div
                             key={conv.id}
                             className={`p-2 cursor-pointer hover:bg-gray-200 flex items-center justify-between relative group

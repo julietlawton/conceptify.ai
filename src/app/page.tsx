@@ -13,10 +13,11 @@ export default function Home() {
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(false)
   const [isSideNavOpen, setIsSideNavOpen] = useState(true)
   const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
-  const { currentConversationId, conversations} = useChat();
+  const { currentConversationId, conversations } = useChat();
 
   const currentConversation = currentConversationId ? conversations[currentConversationId] : null;
   const graphData = currentConversationId ? conversations[currentConversationId]?.graphData || null : null;
+  const [graphKey, setGraphKey] = useState(0);
 
   const handleResize = useCallback(() => {
     window.dispatchEvent(new Event("resize"))
@@ -24,15 +25,22 @@ export default function Home() {
 
   useEffect(() => {
     if (isVisualizerOpen || isGraphFullScreen) {
-        const timer = setTimeout(handleResize, 310);
-        return () => clearTimeout(timer);
+      const timer = setTimeout(handleResize, 310);
+      return () => clearTimeout(timer);
     }
-}, [isVisualizerOpen, isGraphFullScreen, handleResize]); 
+  }, [isVisualizerOpen, isGraphFullScreen, handleResize]);
 
-const toggleFullScreen = () => {
-  setIsGraphFullScreen(prev => !prev);
-  setTimeout(handleResize, 310);
-};
+  const toggleFullScreen = () => {
+    setIsGraphFullScreen(prev => !prev);
+    setTimeout(handleResize, 310);
+  };
+
+  useEffect(() => {
+    if (isVisualizerOpen) {
+      setGraphKey((old) => old + 1);
+      console.log("graphkey", graphKey);
+    }
+  }, [isVisualizerOpen]);
 
 
   return (
@@ -88,7 +96,7 @@ const toggleFullScreen = () => {
           ${isGraphFullScreen ? "fixed inset-0 bg-white z-50" : isVisualizerOpen ? "w-1/2 opacity-100" : "w-0 opacity-0"}`}
       >
         {isVisualizerOpen && graphData ? (
-          <NetworkGraph isFullScreen={isGraphFullScreen} onToggleFullScreen={toggleFullScreen} />
+          <NetworkGraph isFullScreen={isGraphFullScreen} onToggleFullScreen={toggleFullScreen} key={graphKey} />
         ) : (
           isVisualizerOpen && (
             <div

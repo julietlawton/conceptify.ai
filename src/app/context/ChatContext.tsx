@@ -16,10 +16,7 @@ interface ChatContextType {
     currentConversationId: string | null;
     setCurrentConversationId: React.Dispatch<React.SetStateAction<string | null>>;
     messages: Message[];
-    // graphData: KnowledgeGraph | null;
-    // setGraphData: (graphData: KnowledgeGraph) => void;
     updateConversationGraphData: (conversationId: string, graphData: KnowledgeGraph | null) => void;
-    // getNodeName: (id: string) => string;
     isLoading: boolean;
     setIsLoading: (loading: boolean) => void;
     isLoadingConversations: boolean;
@@ -53,32 +50,55 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const savedConversations = localStorage.getItem("conversations");
         if (savedConversations) {
-            const parsedConversations = JSON.parse(savedConversations);
-            // Sort conversations based on last message time
-            const sorted = Object.values(parsedConversations).sort(
-                (a, b) => getLastMessageTime(b) - getLastMessageTime(a)
-            );
-            setConversations(parsedConversations);
-
-            if (Object.keys(parsedConversations).length > 0) {
-                setCurrentConversationId(Object.keys(parsedConversations)[0]);
-                setGraphData(parsedConversations[Object.keys(parsedConversations)[0]].graphData || null);
-            } else {
-                console.log("Creating convo on line 54");
-                createNewConversation();
-            }
-
-            //   if (sorted.length > 0) {
-            //     // Set the current conversation to the one with the most recent message.
-            //     setCurrentConversationId(sorted[0].id);
-            //   }
-        } else {
+          const parsedConversations = JSON.parse(savedConversations);
+          setConversations(parsedConversations); // Still an object
+      
+          // If you want to auto-select the “most recent” conversation:
+          const sorted = Object.values(parsedConversations).sort(
+            (a, b) => getLastMessageTime(b) - getLastMessageTime(a)
+          );
+      
+          if (sorted.length > 0) {
+            setCurrentConversationId(sorted[0].id);
+            setGraphData(parsedConversations[sorted[0].id].graphData || null);
+          } else {
             createNewConversation();
+          }
+        } else {
+          createNewConversation();
         }
         setIsLoadingConversations(false);
-    }, []);
+      }, []);
 
-    // // Load conversations from local storage on mount
+    // useEffect(() => {
+    //     const savedConversations = localStorage.getItem("conversations");
+    //     if (savedConversations) {
+    //         const parsedConversations = JSON.parse(savedConversations);
+    //         // Sort conversations based on last message time
+    //         const sortedConversations = Object.values(parsedConversations).sort(
+    //             (a, b) => getLastMessageTime(b) - getLastMessageTime(a)
+    //         );
+    //         setConversations(sortedConversations);
+
+    //         if (Object.keys(sortedConversations).length > 0) {
+    //             setCurrentConversationId(Object.keys(sortedConversations)[0]);
+    //             setGraphData(sortedConversations[Object.keys(sortedConversations)[0]].graphData || null);
+    //         } else {
+    //             console.log("Creating convo on line 54");
+    //             createNewConversation();
+    //         }
+
+    //         //   if (sorted.length > 0) {
+    //         //     // Set the current conversation to the one with the most recent message.
+    //         //     setCurrentConversationId(sorted[0].id);
+    //         //   }
+    //     } else {
+    //         createNewConversation();
+    //     }
+    //     setIsLoadingConversations(false);
+    // }, []);
+
+    // Load conversations from local storage on mount
     // useEffect(() => {
     //     const savedConversations = localStorage.getItem("conversations");
     //     if (savedConversations) {
@@ -169,13 +189,14 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             localStorage.setItem("conversations", JSON.stringify(updatedConversations));
             return updatedConversations;
         });
-
+        console.log("Updating graph:", newGraph);
         setGraphData(newGraph);
     };
 
     const switchConversation = (conversationId: string) => {
         if (conversations[conversationId]) {
             setCurrentConversationId(conversationId);
+            console.log("Graph data", conversations[conversationId]?.graphData);
             setGraphData(conversations[conversationId]?.graphData || null);
         }
     };
