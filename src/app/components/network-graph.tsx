@@ -34,8 +34,10 @@ import {
     UIGraphNode,
     UIGraphLink,
     UIGraph,
-    NodeEdge 
+    NodeEdge, 
+    ColorPalette
 } from "../lib/types";
+import { inter } from "../ui/fonts";
 
 interface NewNodeData {
     name: string;
@@ -106,6 +108,85 @@ const colors = [
     " #129edf",
     " #1912df",
 ]
+
+const colorPalettes: ColorPalette[] = [
+    { 
+        id: "balloons", 
+        name: "Balloons", 
+        colors: [
+            " #378d00",
+            " #74b600",
+            " #df5734",
+            " #9c0096",
+            " #ff7f00",
+            " #eccd1d",
+            " #20b2ad",
+            " #e37bd0",
+            " #129edf",
+            " #1912df",
+        ],
+        node_highlight: " #f6ff00",
+        link_highlight: " #FFA500",
+        text_color: "white"
+    },
+    { 
+        id: "viridis", 
+        name: "Viridis", 
+        colors: [
+            " #fde725",
+            " #b5de2b",
+            " #6ece58",
+            " #35b779",
+            " #1f9e89",
+            " #26828e",
+            " #31688e",
+            " #3e4989",
+            " #482878",
+            " #440154",
+        ],
+        node_highlight: " #f6ff00",
+        link_highlight: " #FFA500",
+        text_color: "white"
+    },
+    { 
+        id: "pastel", 
+        name: "Pastels", 
+        colors: [
+            " #fbf8cc",
+            " #fde4cf",
+            " #ffcfd2",
+            " #f1c0e8",
+            " #cfbaf0",
+            " #a3c4f3",
+            " #90dbf4",
+            " #8eecf5",
+            " #98f5e1",
+            " #b9fbc0"
+        ],
+        node_highlight: " #f6ff00",
+        link_highlight: " #FFA500",
+        text_color: "black"
+    },
+    { 
+        id: "synthwave", 
+        name: "Synthwave", 
+        colors: [
+            " #f72585",
+            " #b5179e",
+            " #7209b7",
+            " #560bad",
+            " #480ca8",
+            " #3a0ca3",
+            " #3f37c9",
+            " #4361ee",
+            " #4895ef",
+            " #4cc9f0"
+        ],
+        node_highlight: " #f6ff00",
+        link_highlight: " #FFA500",
+        text_color: "white"
+    },
+  ];
 
 
 const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGraph }) => {
@@ -252,6 +333,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
 
     useEffect(() => {
         // Clone pure graph data and add default value for showRelationships
+        setSelectedNode(null);
         const cloned = JSON.parse(JSON.stringify(graphData));
         cloned.nodes = cloned.nodes.map((node: any) => ({
           ...node,
@@ -581,10 +663,16 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     };
 
     const handleSearchSelect = (node: UIGraphNode) => {
+        console.log("Zooming to", node);
+        console.log("Zooming to", node.id);
         // Zoom to the node
         if (forceGraphRef.current && node) {
-          forceGraphRef.current.zoomToFit(500, 400, (n) => n.id === node.id);
+          forceGraphRef.current.zoomToFit(500, 400, (n) => String(n.id) === String(node.id));
         }
+    };
+
+    const handleColorPaletteSelect = (palette: ColorPalette) => {
+        console.log("Selected palette:", palette);
     };
 
     return (
@@ -600,6 +688,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 onDeleteGraph={handleDeleteGraph}
                 nodes={uiGraphData.nodes}
                 onSearchSelect={handleSearchSelect}
+                colorPalettes={colorPalettes}
+                onColorPaletteSelect={handleColorPaletteSelect}
             />
             <div className="flex-grow">
                 <ForceGraph2D

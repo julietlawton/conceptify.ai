@@ -10,8 +10,10 @@ import {
     ArrowPathRoundedSquareIcon,
     MagnifyingGlassIcon
 } from "@heroicons/react/24/solid"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { UIGraphNode } from "../lib/types";
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { UIGraphNode, ColorPalette } from "../lib/types";
+import { inter } from "../ui/fonts";
+import { ColorGradientIcon } from "../ui/icons";
 
 interface GraphToolbarProps {
     onAddNode: () => void
@@ -24,6 +26,29 @@ interface GraphToolbarProps {
     onDeleteGraph: () => void
     onSearchSelect: (node: UIGraphNode) => void;
     nodes: UIGraphNode[];
+    onColorPaletteSelect: (palette: ColorPalette) => void;
+    colorPalettes: ColorPalette[];
+}
+
+function useOnClickOutside<T extends HTMLElement>(
+    ref: RefObject<T>,
+    handler: (event: MouseEvent | TouchEvent) => void
+  ) {
+    useEffect(() => {
+      const listener = (event: MouseEvent | TouchEvent) => {
+        if (!ref.current || ref.current.contains(event.target as Node)) {
+          return;
+        }
+        handler(event);
+      };
+
+      document.addEventListener("mousedown", listener, true);
+      document.addEventListener("touchstart", listener, true);
+      return () => {
+        document.removeEventListener("mousedown", listener, true);
+        document.removeEventListener("touchstart", listener, true);
+      };
+    }, [ref, handler]);
 }
 
 export function GraphToolbar({
@@ -36,12 +61,28 @@ export function GraphToolbar({
     isFullScreen,
     onDeleteGraph,
     onSearchSelect,
-    nodes
+    nodes,
+    onColorPaletteSelect,
+    colorPalettes
 }: GraphToolbarProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [highlightIndex, setHighlightIndex] = useState<number>(-1);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    const [isColorPalettePickerOpen, setIsColorPalettePickerOpen] = useState(false);
+    const [selectedPalette, setSelectedPalette] = useState<ColorPalette>(colorPalettes[0]);
+    const colorPaletteInputRef = useRef<HTMLInputElement>(null);
+
+    useOnClickOutside(containerRef as React.RefObject<HTMLDivElement>, () => {
+        setIsSearchOpen(false);
+        setIsColorPalettePickerOpen(false);
+    });
+
+    useEffect(() => {
+        setHighlightIndex(0);
+    }, [searchTerm]);
 
     const searchResults = useMemo(() => {
         if (!searchTerm.trim()) return [];
@@ -51,11 +92,12 @@ export function GraphToolbar({
     }, [searchTerm, nodes]);
 
     useEffect(() => {
-        if (isSearchOpen && inputRef.current) {
-            inputRef.current.focus();
+        if (isSearchOpen && searchInputRef.current) {
+            searchInputRef.current.focus();
             // Reset highlighted index
             setHighlightIndex(0);
         }
+        setSearchTerm("");
     }, [isSearchOpen]);
 
     useEffect(() => {
@@ -79,12 +121,10 @@ export function GraphToolbar({
                 if (searchResults[highlightIndex]) {
                     onSearchSelect(searchResults[highlightIndex]);
                     setIsSearchOpen(false);
-                    setSearchTerm("");
                 }
                 e.preventDefault();
-            } else if (e.key === "Escape"){
+            } else if (e.key === "Escape") {
                 setIsSearchOpen(false);
-                setSearchTerm("");
             }
 
         },
@@ -94,11 +134,16 @@ export function GraphToolbar({
     const handleSelectNode = useCallback((node: UIGraphNode) => {
         onSearchSelect(node);
         setIsSearchOpen(false);
-        setSearchTerm("");
     }, [onSearchSelect]);
 
+    const handlePaletteSelect = (palette: ColorPalette) => {
+        setSelectedPalette(palette);
+        setIsColorPalettePickerOpen(false);
+        console.log("Selected palette:", palette);
+    };
+
     return (
-        <div className="flex items-center justify-between p-2 bg-gray-100">
+        <div ref={containerRef} className="flex items-center justify-between p-2 bg-gray-100">
             <TooltipProvider>
                 <div className="flex items-center space-x-2">
                     <Tooltip>
@@ -165,7 +210,12 @@ export function GraphToolbar({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
-                                    onClick={() => setIsSearchOpen((prev) => !prev)}
+                                    onClick={() => {
+                                        setIsSearchOpen((prev) => !prev);
+                                        if(isColorPalettePickerOpen){
+                                            setIsColorPalettePickerOpen(false);
+                                        }
+                                    }}
                                     variant="outline"
                                     size="icon"
                                 >
@@ -179,7 +229,7 @@ export function GraphToolbar({
                         {isSearchOpen && (
                             <div className="absolute top-full left-0 mt-2 w-64 bg-white border rounded shadow z-20">
                                 <Input
-                                    ref={inputRef}
+                                    ref={searchInputRef}
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -192,9 +242,8 @@ export function GraphToolbar({
                                         {searchResults.map((node, index) => (
                                             <div
                                                 key={node.id}
-                                                className={`px-2 py-1 cursor-pointer border-b last:border-0 ${
-                                                    index === highlightIndex ? "bg-gray-100" : "hover:bg-gray-100"
-                                                }`}
+                                                className={`${inter.className} px-2 py-1 cursor-pointer border-b last:border-0 ${index === highlightIndex ? "bg-gray-100" : "hover:bg-gray-100"
+                                                    }`}
                                                 onClick={() => handleSelectNode(node)}
                                             >
                                                 {node.name}
@@ -206,12 +255,58 @@ export function GraphToolbar({
                         )}
                     </div>
 
+                    <div className="relative">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={() => {
+                                        setIsColorPalettePickerOpen((prev) => !prev);
+                                        if(isSearchOpen){
+                                            setIsSearchOpen(false);
+                                        }
+                                    }}
+                                    variant="outline"
+                                    size="icon"
+                                >
+                                    <ColorGradientIcon />
+                                    <span className="sr-only">Select Color Palette</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Select Color Palette</TooltipContent>
+                        </Tooltip>
+
+                        {isColorPalettePickerOpen && (
+                            <div className="absolute top-full left-0 mt-2 w-80 bg-white border rounded shadow z-20">
+                                {colorPalettes.map((palette) => (
+                                    <div
+                                        ref={colorPaletteInputRef}
+                                        key={palette.id}
+                                        onClick={() => handlePaletteSelect(palette)}
+                                        className={` ${inter.className} px-2 py-1 cursor-pointer border-b last:border-0 hover:bg-gray-100 flex items-center ${selectedPalette.id === palette.id ? "bg-gray-100" : ""
+                                            }`}
+                                    >
+                                        <span className="flex-grow">{palette.name}</span>
+                                        <div className="flex space-x-1">
+                                            {palette.colors.map((color, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className="w-4 h-8 rounded"
+                                                    style={{ backgroundColor: color }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                    </div>
 
                     {selectedNode && (
                         <Input type="text" value={selectedNode.name} readOnly className="ml-2 w-40" placeholder="Selected Node" />
                     )}
                 </div>
-            </TooltipProvider>
+            </TooltipProvider >
 
             <div className="flex items-center">
                 <button
@@ -223,6 +318,6 @@ export function GraphToolbar({
 
             </div>
 
-        </div>
+        </div >
     )
 }

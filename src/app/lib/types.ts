@@ -47,3 +47,12 @@ export interface NodeEdge {
     label: string;
     direction: "source" | "target";
 }
+
+export interface ColorPalette {
+    id: string;
+    name: string;
+    colors: string[];
+    node_highlight: string;
+    link_highlight: string;
+    text_color: "black" | "white";
+}
