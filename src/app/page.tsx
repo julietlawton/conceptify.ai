@@ -13,7 +13,7 @@ export default function Home() {
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(false)
   const [isSideNavOpen, setIsSideNavOpen] = useState(true)
   const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
-  const { currentConversationId, conversations } = useChat();
+  const { currentConversationId, conversations, coldStartGraph } = useChat();
 
   const currentConversation = currentConversationId ? conversations[currentConversationId] : null;
   const graphData = currentConversationId ? conversations[currentConversationId]?.graphData || null : null;
@@ -90,7 +90,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Graph Section (Fullscreen Applies Here) */}
       <div
         className={`transition-all duration-300 ease-in-out overflow-hidden border 
           ${isGraphFullScreen ? "fixed inset-0 bg-white z-50" : isVisualizerOpen ? "w-1/2 opacity-100" : "w-0 opacity-0"}`}
@@ -105,9 +104,24 @@ export default function Home() {
                 backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('/graph-placeholder.svg')`,
               }}
             >
-              <p className="text-gray-500 text-lg bg-opacity-70 p-4 rounded-lg">
-                Nothing here yet. Add a message to get started.
-              </p>
+              <div className="flex flex-col items-center text-center space-y-4">
+                <p className="text-gray-500 text-lg">
+                  Nothing here yet. Add a message to get started
+                </p>
+                <p className="text-gray-500 text-lg">or</p>
+                <button
+                  className="px-4 py-2 text-sm text-white bg-gray-500 rounded-md hover:bg-black"
+                  onClick={() => {
+                    if (currentConversationId) {
+                      coldStartGraph(currentConversationId);
+                    } else {
+                      console.warn("No active conversation yet");
+                    }}
+                  }
+                >
+                  Create Empty Graph
+                </button>
+              </div>
             </div>
           )
         )}

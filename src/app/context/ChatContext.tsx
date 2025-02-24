@@ -20,6 +20,7 @@ interface ChatContextType {
     switchConversation: (conversationId: string) => void;
     addMessageToConversation: (message: Message) => void;
     getLastMessageTime: (conversation: Conversation) => number;
+    coldStartGraph: (conversationId: string) => void;
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -112,6 +113,32 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         setGraphData(null);
     };
 
+    const coldStartGraph = (conversationId: string) => {
+        const newGraph = { 
+            nodes: [], 
+            links: [], 
+            settings: {
+                colorPaletteId: ColorPalettes[0].id, 
+                showNodeRelationships: {}
+            } 
+        };
+
+        setConversations((prevConversations) => {
+            const updatedConversations = {
+                ...prevConversations,
+                [conversationId]: {
+                    ...prevConversations[conversationId],
+                    graphData: newGraph,
+                },
+            };
+
+            localStorage.setItem("conversations", JSON.stringify(updatedConversations));
+            return updatedConversations;
+        });
+        console.log("Cold starting graph:", newGraph);
+        setGraphData(newGraph);
+    };
+
     const updateConversationTitle = (title: string) => {
         if (!currentConversationId) return;
 
@@ -182,7 +209,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
                 updateConversationTitle,
                 switchConversation,
                 addMessageToConversation,
-                getLastMessageTime
+                getLastMessageTime,
+                coldStartGraph
             }}
         >
             {children}
