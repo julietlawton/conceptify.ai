@@ -11,25 +11,10 @@ export default function SideNav() {
         currentConversationId,
         setCurrentConversationId,
         createNewConversation,
-        switchConversation
+        switchConversation,
+        getLastMessageTime
     } = useChat();
 
-    const getLastMessageTime = (conversation: Conversation) => {
-        const { messages, createdAt } = conversation;
-        if (messages && messages.length > 0) {
-
-            const most_recent_message_date = messages[messages.length - 1].createdAt;
-            
-            if (most_recent_message_date){
-                return new Date(most_recent_message_date).getTime();
-            }else{
-                return new Date(createdAt).getTime();
-            }
-
-        }
-
-        return new Date(createdAt).getTime();
-    };
 
     const handleDeleteConversation = (conversationId: string) => {
         setConversations((prev) => {

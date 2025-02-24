@@ -14,6 +14,7 @@ import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "re
 import { UIGraphNode, ColorPalette } from "../lib/types";
 import { inter } from "../ui/fonts";
 import { ColorGradientIcon } from "../ui/icons";
+import { ColorPalettes } from "../ui/color-palettes";
 
 interface GraphToolbarProps {
     onAddNode: () => void
@@ -27,7 +28,7 @@ interface GraphToolbarProps {
     onSearchSelect: (node: UIGraphNode) => void;
     nodes: UIGraphNode[];
     onColorPaletteSelect: (palette: ColorPalette) => void;
-    colorPalettes: ColorPalette[];
+    currentColorPalette: ColorPalette;
 }
 
 function useOnClickOutside<T extends HTMLElement>(
@@ -63,7 +64,7 @@ export function GraphToolbar({
     onSearchSelect,
     nodes,
     onColorPaletteSelect,
-    colorPalettes
+    currentColorPalette
 }: GraphToolbarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -72,7 +73,7 @@ export function GraphToolbar({
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     const [isColorPalettePickerOpen, setIsColorPalettePickerOpen] = useState(false);
-    const [selectedPalette, setSelectedPalette] = useState<ColorPalette>(colorPalettes[0]);
+    const [selectedPalette, setSelectedPalette] = useState<ColorPalette>(currentColorPalette);
     const colorPaletteInputRef = useRef<HTMLInputElement>(null);
 
     useOnClickOutside(containerRef as React.RefObject<HTMLDivElement>, () => {
@@ -138,8 +139,8 @@ export function GraphToolbar({
 
     const handlePaletteSelect = (palette: ColorPalette) => {
         setSelectedPalette(palette);
+        onColorPaletteSelect(palette);
         setIsColorPalettePickerOpen(false);
-        console.log("Selected palette:", palette);
     };
 
     return (
@@ -277,7 +278,7 @@ export function GraphToolbar({
 
                         {isColorPalettePickerOpen && (
                             <div className="absolute top-full left-0 mt-2 w-80 bg-white border rounded shadow z-20">
-                                {colorPalettes.map((palette) => (
+                                {ColorPalettes.map((palette) => (
                                     <div
                                         ref={colorPaletteInputRef}
                                         key={palette.id}

@@ -7,14 +7,12 @@ import { SparklesIcon, ArrowRightEndOnRectangleIcon } from '@heroicons/react/24/
 import { send, title } from 'process';
 import { ChatBubble } from './chat-bubble';
 import { KnowledgeGraph } from '../lib/types';
+import { ColorPalettes } from '../ui/color-palettes';
 
 export default function Chat() {
     const {
         messages,
         addMessageToConversation,
-        // graphData,
-        // setGraphData,
-        // updateConversationGraphData,
         setIsLoading,
         isLoading,
         updateConversationTitle,
@@ -40,16 +38,6 @@ export default function Chat() {
         // Whenever the conversation changes, reset localMessages to match it
         setLocalMessages(messages);
     }, [currentConversationId]);
-
-
-    // useEffect(() => {
-    //     // Update messages when conversation changes
-    //     if (currentConversationId && conversations[currentConversationId]) {
-    //         setLocalMessages(conversations[currentConversationId].messages || []);
-    //     } else {
-    //         setLocalMessages([]); // Empty chat for new conversation
-    //     }
-    // }, [currentConversationId, conversations]);
 
     const generateChatTitle = async (message: string) => {
         const messages: Message[] = [
@@ -172,17 +160,17 @@ export default function Chat() {
             console.log("Data returned from model:", newGraphData);
 
             // Convert nodes into correct format with unique IDs
-            const updatedNodes = newGraphData.nodes.map((node: any) => ({
+            const newNodes = newGraphData.nodes.map((node: any) => ({
                 id: crypto.randomUUID(),
                 name: node.name,
                 info: node.info,
             }));
 
             // Use existing nodes + new ones
-            const allNodes = [...(graphData?.nodes || []), ...updatedNodes];
+            const allNodes = [...(graphData?.nodes || []), ...newNodes];
 
             // Convert links to correct format with ID references
-            const updatedLinks = newGraphData.links
+            const newLinks = newGraphData.links
                 .map((link: any) => {
                     const sourceNode = allNodes.find(node => node.name === link.source);
                     const targetNode = allNodes.find(node => node.name === link.target);
@@ -200,56 +188,57 @@ export default function Chat() {
                 })
                 .filter((link) => link !== null); // Remove invalid links
 
-            // // Merge the new graph with existing one
-            // setGraphData((prevGraph: KnowledgeGraph | null) => {
-            //     if (!prevGraph) return { nodes: updatedNodes, links: updatedLinks };
-
-            //     const mergedNodes = [
-            //         ...prevGraph.nodes,
-            //         ...updatedNodes.filter(newNode => !prevGraph.nodes.some(existingNode => existingNode.name === newNode.name))
-            //     ];
-
-            //     const mergedLinks = [
-            //         ...prevGraph.links,
-            //         ...updatedLinks.filter(newLink =>
-            //             !prevGraph.links.some(existingLink =>
-            //                 existingLink.source === newLink.source && existingLink.target === newLink.target
-            //             )
-            //         )
-            //     ];
-
-            //     return { nodes: mergedNodes, links: mergedLinks };
-            // });
             // Merge the new graph with the current conversation's graph:
             let mergedGraph;
             if (!graphData || graphData.nodes.length === 0) {
-                mergedGraph = { nodes: updatedNodes, links: updatedLinks };
+                mergedGraph = { 
+                    nodes: newNodes, 
+                    links: newLinks,
+                    settings: {
+                        colorPaletteId: ColorPalettes[0].id,
+                        showNodeRelationships: newNodes.reduce((acc, node) => {
+                          acc[node.id] = true;
+                          return acc;
+                        }, {} as { [nodeId: string]: boolean }),
+                    },
+                };
             } else {
                 const mergedNodes = [
                     ...graphData.nodes,
-                    ...updatedNodes.filter(newNode =>
+                    ...newNodes.filter(newNode =>
                         !graphData.nodes.some((existingNode: { name: string; }) => existingNode.name === newNode.name)
                     )
                 ];
                 const mergedLinks = [
                     ...graphData.links,
-                    ...updatedLinks.filter(newLink =>
+                    ...newLinks.filter(newLink =>
                         !graphData.links.some((existingLink: { source: string; target: string; }) =>
                             existingLink.source === newLink.source && existingLink.target === newLink.target
                         )
                     )
                 ];
-                mergedGraph = { nodes: mergedNodes, links: mergedLinks };
+                const existingSettings = graphData.settings;
+                const updatedShowNodeRelationships = { ...existingSettings.showNodeRelationships };
+                newNodes.forEach((node) => {
+                    if (!(node.id in updatedShowNodeRelationships)) {
+                      updatedShowNodeRelationships[node.id] = true;
+                    }
+                });
+
+                mergedGraph = {
+                    nodes: mergedNodes,
+                    links: mergedLinks,
+                    settings: {
+                      colorPaletteId: existingSettings.colorPaletteId,
+                      showNodeRelationships: updatedShowNodeRelationships,
+                    },
+                };
             }
 
             // Now update the conversation's graph using the context's updater
             if (currentConversationId) {
                 updateConversationGraphData(currentConversationId, mergedGraph);
             }
-
-            // if (currentConversationId) {
-            //     updateConversationGraphData(currentConversationId, updatedGraph);
-            // }
 
         } catch (error) {
             console.error("Error generating graph:", error);

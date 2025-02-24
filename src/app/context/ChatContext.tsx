@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { Message } from "ai";
 import { Conversation, KnowledgeGraph } from "../lib/types";
+import { ColorPalettes } from "../ui/color-palettes";
 
 interface ChatContextType {
     conversations: Record<string, Conversation>;
@@ -18,6 +19,7 @@ interface ChatContextType {
     updateConversationTitle: (title: string) => void;
     switchConversation: (conversationId: string) => void;
     addMessageToConversation: (message: Message) => void;
+    getLastMessageTime: (conversation: Conversation) => number;
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -35,7 +37,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         if (messages && messages.length > 0) {
 
             const most_recent_message_date = messages[messages.length - 1].createdAt;
-            
+
             if (most_recent_message_date){
                 return new Date(most_recent_message_date).getTime();
             }else{
@@ -50,7 +52,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const savedConversations = localStorage.getItem("conversations");
         if (savedConversations) {
-          const parsedConversations = JSON.parse(savedConversations);
+          const parsedConversations = JSON.parse(savedConversations) as Record<string, Conversation>;;
           setConversations(parsedConversations); // Still an object
       
           // If you want to auto-select the “most recent” conversation:
@@ -69,56 +71,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         }
         setIsLoadingConversations(false);
       }, []);
-
-    // useEffect(() => {
-    //     const savedConversations = localStorage.getItem("conversations");
-    //     if (savedConversations) {
-    //         const parsedConversations = JSON.parse(savedConversations);
-    //         // Sort conversations based on last message time
-    //         const sortedConversations = Object.values(parsedConversations).sort(
-    //             (a, b) => getLastMessageTime(b) - getLastMessageTime(a)
-    //         );
-    //         setConversations(sortedConversations);
-
-    //         if (Object.keys(sortedConversations).length > 0) {
-    //             setCurrentConversationId(Object.keys(sortedConversations)[0]);
-    //             setGraphData(sortedConversations[Object.keys(sortedConversations)[0]].graphData || null);
-    //         } else {
-    //             console.log("Creating convo on line 54");
-    //             createNewConversation();
-    //         }
-
-    //         //   if (sorted.length > 0) {
-    //         //     // Set the current conversation to the one with the most recent message.
-    //         //     setCurrentConversationId(sorted[0].id);
-    //         //   }
-    //     } else {
-    //         createNewConversation();
-    //     }
-    //     setIsLoadingConversations(false);
-    // }, []);
-
-    // Load conversations from local storage on mount
-    // useEffect(() => {
-    //     const savedConversations = localStorage.getItem("conversations");
-    //     if (savedConversations) {
-    //         const parsedConversations = JSON.parse(savedConversations);
-    //         setConversations(parsedConversations);
-
-    //         if (Object.keys(parsedConversations).length > 0) {
-    //             setCurrentConversationId(Object.keys(parsedConversations)[0]);
-    //             setGraphData(parsedConversations[Object.keys(parsedConversations)[0]].graphData || null);
-    //         } else {
-    //             console.log("Creating convo on line 54");
-    //             createNewConversation();
-    //         }
-    //     } else {
-    //         console.log("Creating convo on line 58");
-    //         createNewConversation();
-    //     }
-
-    //     setIsLoadingConversations(false);
-    // }, []);
 
     useEffect(() => {
         localStorage.setItem("conversations", JSON.stringify(conversations));
@@ -140,10 +92,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Get messages from the active conversation
     const messages = currentConversationId ? conversations[currentConversationId]?.messages || [] : [];
-
-    // const getNodeName = (id: string) => {
-    //     return graphData?.nodes.find((n) => n.id === id)?.name || "Unknown";
-    // };
 
     // Create a new conversation
     const createNewConversation = () => {
@@ -225,8 +173,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
                 currentConversationId,
                 setCurrentConversationId,
                 messages,
-                // graphData,
-                // setGraphData,
                 updateConversationGraphData,
                 isLoading,
                 setIsLoading,
@@ -236,7 +182,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
                 updateConversationTitle,
                 switchConversation,
                 addMessageToConversation,
-                // setMessages
+                getLastMessageTime
             }}
         >
             {children}
@@ -257,7 +203,14 @@ export const useCurrentGraph = () => {
     const graphData =
         currentConversationId && conversations[currentConversationId]?.graphData
             ? conversations[currentConversationId].graphData
-            : { nodes: [], links: [] };
+            : { 
+                nodes: [], 
+                links: [], 
+                settings: {
+                    colorPaletteId: ColorPalettes[0].id, 
+                    showNodeRelationships: {}
+                } 
+            };
 
     return { graphData, updateConversationGraphData };
 };

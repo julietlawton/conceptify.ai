@@ -38,6 +38,7 @@ import {
     ColorPalette
 } from "../lib/types";
 import { inter } from "../ui/fonts";
+import { colorPaletteById, ColorPalettes } from "../ui/color-palettes";
 
 interface NewNodeData {
     name: string;
@@ -45,149 +46,6 @@ interface NewNodeData {
     showRelationships: boolean;
     edges: NodeEdge[];
 }
-
-// const colors = [
-//     //" #c1e7ee",
-//     " #90e0ef",
-//     " #00b4d8",
-//     " #0077b6",
-//     " #03045e",
-//     " #00a6fb", 
-//     " #0582ca", 
-//     " #006494", 
-//     " #003554", 
-//     "#05202e"
-// ]
-
-// const colors = [
-//     " #fbf8cc",
-//     " #fde4cf",
-//     " #ffcfd2",
-//     " #f1c0e8",
-//     " #cfbaf0",
-//     " #a3c4f3",
-//     " #90dbf4",
-//     " #8eecf5",
-//     " #98f5e1",
-//     " #b9fbc0"
-// ]
-
-// const colors = [
-//     " #390099",
-//     " #9e0059",
-//     " #ff0054",
-//     " #ff5400",
-//     " #ffbd00"
-// ]
-
-// const colors = [
-//     "#f72585",
-//     "#b5179e",
-//     "#7209b7",
-//     "#560bad",
-//     "#480ca8",
-//     "#3a0ca3",
-//     "#3f37c9",
-//     "#4361ee",
-//     "#4895ef",
-//     "#4cc9f0"
-// ]
-
-const colors = [
-    " #378d00",
-    " #74b600",
-    // " #e18800",
-    " #df5734",
-    " #9c0096",
-    " #ff7f00",
-    " #eccd1d",
-    " #20b2ad",
-    // " #800080",
-    // " #000066",
-    " #e37bd0",
-    " #129edf",
-    " #1912df",
-]
-
-const colorPalettes: ColorPalette[] = [
-    { 
-        id: "balloons", 
-        name: "Balloons", 
-        colors: [
-            " #378d00",
-            " #74b600",
-            " #df5734",
-            " #9c0096",
-            " #ff7f00",
-            " #eccd1d",
-            " #20b2ad",
-            " #e37bd0",
-            " #129edf",
-            " #1912df",
-        ],
-        node_highlight: " #f6ff00",
-        link_highlight: " #FFA500",
-        text_color: "white"
-    },
-    { 
-        id: "viridis", 
-        name: "Viridis", 
-        colors: [
-            " #fde725",
-            " #b5de2b",
-            " #6ece58",
-            " #35b779",
-            " #1f9e89",
-            " #26828e",
-            " #31688e",
-            " #3e4989",
-            " #482878",
-            " #440154",
-        ],
-        node_highlight: " #f6ff00",
-        link_highlight: " #FFA500",
-        text_color: "white"
-    },
-    { 
-        id: "pastel", 
-        name: "Pastels", 
-        colors: [
-            " #fbf8cc",
-            " #fde4cf",
-            " #ffcfd2",
-            " #f1c0e8",
-            " #cfbaf0",
-            " #a3c4f3",
-            " #90dbf4",
-            " #8eecf5",
-            " #98f5e1",
-            " #b9fbc0"
-        ],
-        node_highlight: " #f6ff00",
-        link_highlight: " #FFA500",
-        text_color: "black"
-    },
-    { 
-        id: "synthwave", 
-        name: "Synthwave", 
-        colors: [
-            " #f72585",
-            " #b5179e",
-            " #7209b7",
-            " #560bad",
-            " #480ca8",
-            " #3a0ca3",
-            " #3f37c9",
-            " #4361ee",
-            " #4895ef",
-            " #4cc9f0"
-        ],
-        node_highlight: " #f6ff00",
-        link_highlight: " #FFA500",
-        text_color: "white"
-    },
-  ];
-
 
 const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGraph }) => {
 
@@ -227,6 +85,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
         return {label, sourceName, targetName};
     });
 
+    const showRelationshipsForNode = graphData.settings.showNodeRelationships[node.id];
 
     return (
         <div
@@ -244,7 +103,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
             </ReactMarkdown>
 
             
-            {/* {node.showRelationships && relatedLinks.length > 0 ? (
+            {showRelationshipsForNode && relatedLinks.length > 0 ? (
                 <div className="mt-2">
                     <h4 className="text-md font-semibold">Relationships:</h4>
                     <ul className="list-disc list-outside pl-5 space-y-1">
@@ -257,9 +116,9 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
                         ))}
                     </ul>
                 </div>
-            ) : node.showRelationships ? (
+            ) : showRelationshipsForNode ? (
                 <p className="text-gray-500">No relationships found.</p>
-            ) : null } */}
+            ) : null }
         </div>
     );
 };
@@ -283,8 +142,17 @@ function stripUIGraph(uiGraph: UIGraph): KnowledgeGraph {
           label: link.label,
         };
       }),
+      settings: uiGraph.settings
     };
 }
+
+function djb2(str: string): number {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    }
+    return hash >>> 0; 
+  }
 
 
 export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFullScreen: boolean, onToggleFullScreen: () => void}) {
@@ -295,12 +163,6 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     const [uiGraphData, setUiGraphData] = useState<UIGraph>(() => {
         // Clone the pure data
         const cloned = JSON.parse(JSON.stringify(graphData));
-        // Add a default for each node if it doesn't already have it
-        cloned.nodes = cloned.nodes.map((node: any) => ({
-          ...node,
-          showRelationships:
-            node.showRelationships !== undefined ? node.showRelationships : true,
-        }));
         return cloned;
     });
 
@@ -335,11 +197,6 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
         // Clone pure graph data and add default value for showRelationships
         setSelectedNode(null);
         const cloned = JSON.parse(JSON.stringify(graphData));
-        cloned.nodes = cloned.nodes.map((node: any) => ({
-          ...node,
-          // If showRelationships is not defined, default to true
-          showRelationships: node.showRelationships !== undefined ? node.showRelationships : true,
-        }));
         setUiGraphData(cloned);
     }, [graphData]);
 
@@ -427,10 +284,12 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     }, [])
 
     const nodeColor = useCallback((node: UIGraphNode) => {
-        // Prevents node colors from switching in between renders
-        const hash = node.id.split("").reduce((acc: any, char: string) => acc + char.charCodeAt(0), 0);
-        return colors[hash % colors.length];
-    }, [])
+        const hash = djb2(node.id);
+        const palette = colorPaletteById[uiGraphData.settings.colorPaletteId];
+            return palette.colors[hash % palette.colors.length];
+        },
+        [uiGraphData.settings.colorPaletteId]
+    );
 
     const linkColor = useCallback(
         (link: UIGraphLink) => {
@@ -442,7 +301,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 typeof link.target === "object" && link.target
                     ? link.target.id
                     : link.target;
-            return highlightLinks.has(link.id || `${sourceId}-${targetId}`) ? " #FFA500" : " #dedfde"
+            const linkHighlightColor = colorPaletteById[uiGraphData.settings.colorPaletteId].linkHighlight;
+            return highlightLinks.has(link.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde"
         },
         [highlightLinks],
     )
@@ -487,7 +347,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
             setNewNodeData({ 
                 name: selectedNode.name, 
                 info: selectedNode.info, 
-                showRelationships: selectedNode.showRelationships ?? true, 
+                showRelationships: uiGraphData.settings.showNodeRelationships[selectedNode.id],
                 edges: nodeEdges 
             });
             setIsDialogOpen(true);
@@ -506,8 +366,19 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
               typeof link.target === "object" ? link.target.id : link.target;
             return sourceId !== selectedNode.id && targetId !== selectedNode.id;
           });
+
+          const currentSettings = uiGraphData.settings;
+          const newShowRelationships = Object.fromEntries(
+            Object.entries(currentSettings.showNodeRelationships).filter(
+              ([key]) => key !== selectedNode.id
+            )
+          );
+          const newSettings = {
+            ...currentSettings,
+            showNodeRelationships: newShowRelationships,
+          };
           
-          const newUIGraph: UIGraph = { nodes: newNodes, links: newLinks };
+          const newUIGraph: UIGraph = { nodes: newNodes, links: newLinks, settings: newSettings };
           const pureGraph = stripUIGraph(newUIGraph);
           
           if (currentConversationId) {
@@ -554,9 +425,22 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 })
                 .filter((link) => link !== null);
             
+            const currentSettings = uiGraphData.settings;
+
+            const updatedShowRelationships = {
+                ...currentSettings.showNodeRelationships,
+                [newNode.id]: newNodeData.showRelationships,
+            };
+
+            const newSettings = {
+                ...currentSettings,
+                showNodeRelationships: updatedShowRelationships,
+            };
+            
             const newUIGraph: UIGraph = { 
                 nodes: [...uiGraphData.nodes, newNode], 
                 links: [...uiGraphData.links, ...newLinks],
+                settings: newSettings
             };
             const pureGraph = stripUIGraph(newUIGraph);
 
@@ -572,19 +456,18 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                         ...node,
                         name: newNodeData.name,
                         info: newNodeData.info,
-                        showRelationships: newNodeData.showRelationships,
                     }
                     : node,
-            )
+            );
             const updatedLinks = uiGraphData.links.filter((link) => {
                 // Safely extract IDs from the link
                 const sourceId = typeof link.source === "object" && link.source ? link.source.id : link.source;
                 const targetId = typeof link.target === "object" && link.target ? link.target.id : link.target;
                 // Remove all edges that involve the selected node
                 return sourceId !== selectedNode.id && targetId !== selectedNode.id;
-              });
+            });
               
-              const newLinks = newNodeData.edges
+            const newLinks = newNodeData.edges
               .map((edge) => {
                 const sourceId =
                   typeof edge.direction === "string" && edge.direction === "source"
@@ -617,12 +500,25 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                   target: String(targetId),
                   label: edge.label,
                 } as UIGraphLink;
-              })
-              .filter((link): link is UIGraphLink => link !== null);
+            })
+            .filter((link): link is UIGraphLink => link !== null);
+
+            const currentSettings = uiGraphData.settings;
+
+            const updatedShowRelationships = {
+                ...currentSettings.showNodeRelationships,
+                [selectedNode.id]: newNodeData.showRelationships,
+            };
+
+            const newSettings = {
+                ...currentSettings,
+                showNodeRelationships: updatedShowRelationships,
+            };
 
             const newUIGraph: UIGraph = { 
                 nodes: updatedNodes, 
                 links: [...updatedLinks, ...newLinks],
+                settings: newSettings
             };
             const pureGraph = stripUIGraph(newUIGraph);
 
@@ -672,7 +568,23 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     };
 
     const handleColorPaletteSelect = (palette: ColorPalette) => {
-        console.log("Selected palette:", palette);
+        console.log("Selected palette:", palette.id);
+        console.log(currentConversationId)
+        console.log(uiGraphData.settings)
+        if (currentConversationId && uiGraphData.settings) {
+          // Create a new graph object with updated settings:
+          const newGraph = {
+            ...uiGraphData,
+            settings: {
+              ...uiGraphData.settings,
+              colorPaletteId: palette.id,
+            },
+          };
+          console.log("new graph", newGraph)
+          const pureGraph = stripUIGraph(newGraph);
+          console.log("pure graph", pureGraph)
+          updateConversationGraphData(currentConversationId, pureGraph);
+        }
     };
 
     return (
@@ -688,8 +600,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 onDeleteGraph={handleDeleteGraph}
                 nodes={uiGraphData.nodes}
                 onSearchSelect={handleSearchSelect}
-                colorPalettes={colorPalettes}
                 onColorPaletteSelect={handleColorPaletteSelect}
+                currentColorPalette={colorPaletteById[uiGraphData.settings.colorPaletteId]}
             />
             <div className="flex-grow">
                 <ForceGraph2D
@@ -765,13 +677,17 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                         ctx.fillStyle = nodeColor(node);
                         ctx.fill();
 
+                        const paletteTextColor = colorPaletteById[uiGraphData.settings.colorPaletteId].textColor;
+                        const paletteNodeHighlightColor = colorPaletteById[uiGraphData.settings.colorPaletteId].nodeHighlight;
+
                         // Set text properties
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
-                        ctx.fillStyle = "white";
-                        ctx.strokeStyle = "black";
-                        ctx.lineWidth = 0.25;
-                        ctx.stroke();
+                        ctx.fillStyle = paletteTextColor;
+
+                        // ctx.strokeStyle = "black";
+                        // ctx.lineWidth = 0.25;
+                        // ctx.stroke();
 
                         // Center the block of wrapped text vertically.
                         const totalHeight = lines.length * lineHeight;
@@ -782,7 +698,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
 
                         // Highlight node
                         if (highlightNodes.has(node.id)) {
-                            ctx.strokeStyle = "yellow";
+                            ctx.strokeStyle = paletteNodeHighlightColor;
                             ctx.lineWidth = 2;
                             ctx.stroke();
                         }

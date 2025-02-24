@@ -6,7 +6,7 @@ export interface Conversation {
     title: string;
     messages: Message[];
     createdAt: Date;
-    graphData?: KnowledgeGraph;
+    graphData?: KnowledgeGraph | null;
 }
 
 export interface GraphNode {
@@ -21,16 +21,21 @@ export interface GraphLink {
     label: string;
 }
 
+export interface GraphSettings {
+    colorPaletteId: string;
+    showNodeRelationships: {[nodeId: string]: boolean};
+}
+
 export interface KnowledgeGraph {
     nodes: GraphNode[];
     links: GraphLink[];
+    settings: GraphSettings;
 }
 
 export interface UIGraphNode extends NodeObject {
     id: string;
     name: string;
     info: string;
-    showRelationships?: boolean;
 }
 
 export interface UIGraphLink extends LinkObject {
@@ -40,6 +45,7 @@ export interface UIGraphLink extends LinkObject {
 export interface UIGraph {
     nodes: UIGraphNode[];
     links: UIGraphLink[];
+    settings: GraphSettings;
 }
 
 export interface NodeEdge {
@@ -52,7 +58,7 @@ export interface ColorPalette {
     id: string;
     name: string;
     colors: string[];
-    node_highlight: string;
-    link_highlight: string;
-    text_color: "black" | "white";
+    nodeHighlight: string;
+    linkHighlight: string;
+    textColor: "black" | "white";
 }
