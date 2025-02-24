@@ -175,8 +175,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [dialogMode, setDialogMode] = useState<"add" | "edit">("add")
     const [newNodeData, setNewNodeData] = useState<NewNodeData>({ name: "", info: "", showRelationships: true, edges: [] })
-    const graphRef = useRef<HTMLElement | null>(null);
-    const forceGraphRef = useRef<ForceGraphMethods| null>(null);
+    const graphRef = useRef<HTMLDivElement | null>(null);
+    const forceGraphRef = useRef<ForceGraphMethods | undefined>(undefined);
 
     const updateDimensions = useCallback(() => {
         if (graphRef.current) {
@@ -201,14 +201,16 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     }, [graphData]);
 
     const handleNodeHover = useCallback(
-        (node: UIGraphNode | null, previousNode?: UIGraphNode | null) => {
+        (node: NodeObject | null, previousNode?: NodeObject | null) => {
+            const typedNode = node as UIGraphNode | null;
+
           // Set highlight for the hovered node, if any
           setHighlightNodes(new Set(node ? [node.id] : []));
           
           // Filter links that involve the hovered node, safely extracting IDs
           setHighlightLinks(
             new Set(
-              node
+              typedNode
                 ? uiGraphData.links
                     .filter((link) => {
                       const sourceId =
@@ -219,7 +221,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                         typeof link.target === "object" && link.target
                           ? link.target.id
                           : link.target;
-                      return sourceId === node.id || targetId === node.id;
+                      return sourceId === typedNode.id || targetId === typedNode.id;
                     })
                     .map((link) => {
                       const sourceId =
@@ -238,11 +240,11 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
           );
 
             // Set the hover state
-            setHoverNode(node);
+            setHoverNode(typedNode);
 
-            if (node){
-                node.fx = node.x;
-                node.fy = node.y;
+            if (typedNode){
+                typedNode.fx = typedNode.x;
+                typedNode.fy = typedNode.y;
             } else {
                 uiGraphData.nodes.forEach((n) => {
                     n.fx = undefined;
@@ -258,33 +260,36 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
         [uiGraphData.links, uiGraphData.nodes] // Include additional dependencies if needed
     );
     
-    const handleNodeClick = useCallback((node: UIGraphNode) => {
-        setSelectedNode(node);
+    const handleNodeClick = useCallback((node: NodeObject) => {
+        const typedNode = node as UIGraphNode;
+        setSelectedNode(typedNode);
     }, [])
 
-    const handleLinkHover = useCallback((link: UIGraphLink | null) => {
-        if (!link) {
+    const handleLinkHover = useCallback((link: LinkObject | null) => {
+        const typedLink = link as UIGraphLink;
+        if (!typedLink) {
             setHighlightNodes(new Set());
             setHighlightLinks(new Set());
             setHoverLink(null);
             return;
         }
         const sourceId =
-            typeof link.source === "object" && link.source
-            ? link.source.id
-            : link.source;
+            typeof typedLink.source === "object" && typedLink.source
+            ? typedLink.source.id
+            : typedLink.source;
         const targetId =
-            typeof link.target === "object" && link.target
-            ? link.target.id
-            : link.target;
+            typeof typedLink.target === "object" && typedLink.target
+            ? typedLink.target.id
+            : typedLink.target;
 
         setHighlightNodes(new Set([sourceId, targetId].filter(Boolean) as string[]));
-        setHighlightLinks(new Set([link.id || `${sourceId}-${targetId}`]));
-        setHoverLink(link);
+        setHighlightLinks(new Set([typedLink.id || `${sourceId}-${targetId}`]));
+        setHoverLink(typedLink);
     }, [])
 
-    const nodeColor = useCallback((node: UIGraphNode) => {
-        const hash = djb2(node.id);
+    const nodeColor = useCallback((node: NodeObject) => {
+        const typedNode = node as UIGraphNode;
+        const hash = djb2(typedNode.id);
         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId];
             return palette.colors[hash % palette.colors.length];
         },
@@ -292,17 +297,18 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     );
 
     const linkColor = useCallback(
-        (link: UIGraphLink) => {
+        (link: LinkObject) => {
+            const typedLink = link as UIGraphLink;
             const sourceId =
-                typeof link.source === "object" && link.source
-                    ? link.source.id
-                    : link.source;
+                typeof typedLink.source === "object" && typedLink.source
+                    ? typedLink.source.id
+                    : typedLink.source;
             const targetId =
-                typeof link.target === "object" && link.target
-                    ? link.target.id
-                    : link.target;
+                typeof typedLink.target === "object" && typedLink.target
+                    ? typedLink.target.id
+                    : typedLink.target;
             const linkHighlightColor = colorPaletteById[uiGraphData.settings.colorPaletteId].linkHighlight;
-            return highlightLinks.has(link.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde"
+            return highlightLinks.has(typedLink.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde"
         },
         [highlightLinks],
     )
@@ -609,7 +615,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     graphData={uiGraphData}
                     nodeColor={nodeColor}
                     linkColor={linkColor}
-                    nodeLabel={null}
+                    nodeLabel={undefined}
                     onNodeHover={handleNodeHover}
                     onNodeClick={handleNodeClick}
                     onLinkHover={handleLinkHover}
@@ -617,16 +623,14 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     nodeRelSize={6}
                     width={dimensions.width}
                     height={dimensions.height}
-                    // d3AlphaDecay={0.05}
                     d3VelocityDecay={0.5}
-                    //d3Force="charge"
-                    d3Force={(force) => {
-                        force("link").distance(1000)
-                        force("charge").strength(-500)
-                        force("center").strength(0.05)
-                    }}
-                    //zoom={1}
-                    // onEngineStop={handleEngineStop}
+                    {...({
+                        d3Force: (force: any) => {
+                          force("link").distance(1000);
+                          force("charge").strength(-500);
+                          force("center").strength(0.05);
+                        }
+                      } as any)}
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.name;
                         const fontSize = 14 / globalScale;
@@ -673,7 +677,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
 
                         // Draw the node as a circle
                         ctx.beginPath();
-                        ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
+                        ctx.arc(node.x ?? 0, node.y ?? 0, nodeSize, 0, 2 * Math.PI);
                         ctx.fillStyle = nodeColor(node);
                         ctx.fill();
 
@@ -691,9 +695,9 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
 
                         // Center the block of wrapped text vertically.
                         const totalHeight = lines.length * lineHeight;
-                        let startY = node.y - totalHeight / 2 + lineHeight / 2;
+                        let startY = node.y ?? 0 - totalHeight / 2 + lineHeight / 2;
                         lines.forEach((line, i) => {
-                            ctx.fillText(line, node.x, startY + i * lineHeight);
+                            ctx.fillText(line, node.x ?? 0, startY + i * lineHeight);
                         });
 
                         // Highlight node
@@ -705,31 +709,6 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     }}
                     linkDirectionalParticles={4}
                     linkDirectionalParticleWidth={2}
-                    //   linkCanvasObject={(link, ctx) => {
-                    //     if (hoverLink === link) {
-                    //       const start = link.source
-                    //       const end = link.target
-
-                    //       const textPos = Object.assign({}, start)
-                    //       textPos.x += (end.x - start.x) / 2
-                    //       textPos.y += (end.y - start.y) / 2
-
-                    //       ctx.save()
-                    //       ctx.fillStyle = "black"
-                    //       ctx.font = "10px Sans-Serif"
-                    //       ctx.textAlign = "center"
-                    //       ctx.textBaseline = "middle"
-
-                    //       const padding = 2
-                    //       const textWidth = ctx.measureText(link.label).width
-                    //       ctx.fillStyle = "rgba(255, 255, 255, 0.8)"
-                    //       ctx.fillRect(textPos.x - textWidth / 2 - padding, textPos.y - 7, textWidth + 2 * padding, 14)
-
-                    //       ctx.fillStyle = "black"
-                    //       ctx.fillText(link.label, textPos.x, textPos.y)
-                    //       ctx.restore()
-                    //     }
-                    //   }}
                     linkCanvasObjectMode={() => "after"}
                 />
             </div>
