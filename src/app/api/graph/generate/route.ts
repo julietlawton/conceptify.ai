@@ -1,6 +1,7 @@
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
+import { KnowledgeGraph } from '@/app/lib/types';
 
 const GraphSchema = z.object({
     nodes: z.array(

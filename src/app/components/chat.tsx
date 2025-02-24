@@ -6,6 +6,7 @@ import ChatInput from './chat-input'
 import { SparklesIcon, ArrowRightEndOnRectangleIcon } from '@heroicons/react/24/solid';
 import { send, title } from 'process';
 import { ChatBubble } from './chat-bubble';
+import { KnowledgeGraph } from '../lib/types';
 
 export default function Chat() {
     const {
@@ -138,14 +139,14 @@ export default function Chat() {
                     nodes: existingGraph.nodes.map(node => node.name),
                     
                     links: existingGraph.links.map(link => ({
-                        source: existingGraph.nodes.find(n => n.id === link.source.id)?.name || "",
-                        target: existingGraph.nodes.find(n => n.id === link.target.id)?.name || "",
+                        source: existingGraph.nodes.find(n => n.id === link.source)?.name || "",
+                        target: existingGraph.nodes.find(n => n.id === link.target)?.name || "",
                         label: link.label
                     }))
                 }
                 : null;
             
-            console.log(existingGraph.links);
+            console.log(existingGraph);
 
             console.log(strippedGraph);
 
@@ -227,13 +228,13 @@ export default function Chat() {
                 const mergedNodes = [
                     ...graphData.nodes,
                     ...updatedNodes.filter(newNode =>
-                        !graphData.nodes.some(existingNode => existingNode.name === newNode.name)
+                        !graphData.nodes.some((existingNode: { name: string; }) => existingNode.name === newNode.name)
                     )
                 ];
                 const mergedLinks = [
                     ...graphData.links,
                     ...updatedLinks.filter(newLink =>
-                        !graphData.links.some(existingLink =>
+                        !graphData.links.some((existingLink: { source: string; target: string; }) =>
                             existingLink.source === newLink.source && existingLink.target === newLink.target
                         )
                     )

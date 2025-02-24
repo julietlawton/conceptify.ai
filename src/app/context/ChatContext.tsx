@@ -1,14 +1,7 @@
 "use client";
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { Message } from "ai";
-
-interface Conversation {
-    id: string;
-    title: string;
-    messages: Message[];
-    createdAt: Date;
-    graphData?: KnowledgeGraph;
-}
+import { Conversation, KnowledgeGraph } from "../lib/types";
 
 interface ChatContextType {
     conversations: Record<string, Conversation>;
@@ -37,13 +30,20 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingConversations, setIsLoadingConversations] = useState(true);
 
-    const getLastMessageTime = (conversation) => {
+    const getLastMessageTime = (conversation: Conversation) => {
         const { messages, createdAt } = conversation;
         if (messages && messages.length > 0) {
-            // Assume messages are in chronological order; get the last one
-            return new Date(messages[messages.length - 1].createdAt).getTime();
+
+            const most_recent_message_date = messages[messages.length - 1].createdAt;
+            
+            if (most_recent_message_date){
+                return new Date(most_recent_message_date).getTime();
+            }else{
+                return new Date(createdAt).getTime();
+            }
+
         }
-        // If no messages, fallback to the conversation's creation time.
+
         return new Date(createdAt).getTime();
     };
 

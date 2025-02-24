@@ -2,6 +2,7 @@
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { useChat } from "../context/ChatContext";
+import { Conversation } from "../lib/types";
 
 export default function SideNav() {
     const {
@@ -13,13 +14,20 @@ export default function SideNav() {
         switchConversation
     } = useChat();
 
-    const getLastMessageTime = (conversation) => {
+    const getLastMessageTime = (conversation: Conversation) => {
         const { messages, createdAt } = conversation;
         if (messages && messages.length > 0) {
-            // Assume messages are in chronological order; get the last one
-            return new Date(messages[messages.length - 1].createdAt).getTime();
+
+            const most_recent_message_date = messages[messages.length - 1].createdAt;
+            
+            if (most_recent_message_date){
+                return new Date(most_recent_message_date).getTime();
+            }else{
+                return new Date(createdAt).getTime();
+            }
+
         }
-        // If no messages, fallback to the conversation's creation time.
+
         return new Date(createdAt).getTime();
     };
 

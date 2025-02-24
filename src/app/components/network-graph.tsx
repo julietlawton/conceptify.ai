@@ -27,29 +27,15 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
 import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
-import { UnfoldHorizontal } from "lucide-react";
-
-interface UIGraphNode extends NodeObject {
-    id: string;
-    name: string;
-    info: string;
-    showRelationships?: boolean;
-}
-
-interface UIGraphLink extends LinkObject {
-    label: string;
-}
-
-interface UIGraph {
-    nodes: UIGraphNode[];
-    links: UIGraphLink[];
-}
-
-interface NodeEdge {
-    nodeId: string;
-    label: string;
-    direction: "source" | "target";
-}
+import { 
+    GraphNode, 
+    GraphLink, 
+    KnowledgeGraph,
+    UIGraphNode,
+    UIGraphLink,
+    UIGraph,
+    NodeEdge 
+} from "../lib/types";
 
 interface NewNodeData {
     name: string;
@@ -82,6 +68,27 @@ interface NewNodeData {
 //     " #8eecf5",
 //     " #98f5e1",
 //     " #b9fbc0"
+// ]
+
+// const colors = [
+//     " #390099",
+//     " #9e0059",
+//     " #ff0054",
+//     " #ff5400",
+//     " #ffbd00"
+// ]
+
+// const colors = [
+//     "#f72585",
+//     "#b5179e",
+//     "#7209b7",
+//     "#560bad",
+//     "#480ca8",
+//     "#3a0ca3",
+//     "#3f37c9",
+//     "#4361ee",
+//     "#4895ef",
+//     "#4cc9f0"
 // ]
 
 const colors = [
@@ -156,7 +163,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
             </ReactMarkdown>
 
             
-            {node.showRelationships && relatedLinks.length > 0 ? (
+            {/* {node.showRelationships && relatedLinks.length > 0 ? (
                 <div className="mt-2">
                     <h4 className="text-md font-semibold">Relationships:</h4>
                     <ul className="list-disc list-outside pl-5 space-y-1">
@@ -171,7 +178,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
                 </div>
             ) : node.showRelationships ? (
                 <p className="text-gray-500">No relationships found.</p>
-            ) : null }
+            ) : null } */}
         </div>
     );
 };
@@ -573,6 +580,13 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
         }
     };
 
+    const handleSearchSelect = (node: UIGraphNode) => {
+        // Zoom to the node
+        if (forceGraphRef.current && node) {
+          forceGraphRef.current.zoomToFit(500, 400, (n) => n.id === node.id);
+        }
+    };
+
     return (
         <div ref={graphRef} className="h-full w-full flex flex-col relative">
             <GraphToolbar
@@ -584,6 +598,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 selectedNode={selectedNode}
                 isFullScreen={isFullScreen}
                 onDeleteGraph={handleDeleteGraph}
+                nodes={uiGraphData.nodes}
+                onSearchSelect={handleSearchSelect}
             />
             <div className="flex-grow">
                 <ForceGraph2D
@@ -600,12 +616,12 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     width={dimensions.width}
                     height={dimensions.height}
                     // d3AlphaDecay={0.05}
-                    // d3VelocityDecay={0.5}
+                    d3VelocityDecay={0.5}
                     //d3Force="charge"
                     d3Force={(force) => {
-                        force("link").distance(800)
-                        force("charge").strength(-400)
-                        //force("center").strength(0.1)
+                        force("link").distance(1000)
+                        force("charge").strength(-500)
+                        force("center").strength(0.05)
                     }}
                     //zoom={1}
                     // onEngineStop={handleEngineStop}
@@ -663,6 +679,9 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         ctx.fillStyle = "white";
+                        ctx.strokeStyle = "black";
+                        ctx.lineWidth = 0.25;
+                        ctx.stroke();
 
                         // Center the block of wrapped text vertically.
                         const totalHeight = lines.length * lineHeight;
