@@ -54,8 +54,8 @@ export const ColorPalettes: ColorPalette[] = [
             " #98f5e1",
             " #b9fbc0"
         ],
-        nodeHighlight: " #f6ff00",
-        linkHighlight: " #FFA500",
+        nodeHighlight: " #147df5",
+        linkHighlight: " #0affff",
         textColor: "black"
     },
     { 

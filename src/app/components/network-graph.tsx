@@ -27,14 +27,14 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
 import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
-import { 
-    GraphNode, 
-    GraphLink, 
+import {
+    GraphNode,
+    GraphLink,
     KnowledgeGraph,
     UIGraphNode,
     UIGraphLink,
     UIGraph,
-    NodeEdge, 
+    NodeEdge,
     ColorPalette
 } from "../lib/types";
 import { inter } from "../ui/fonts";
@@ -51,39 +51,39 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
 
     const relatedLinks = graphData.links.filter((link: UIGraphLink) => {
         const sourceId =
-        typeof link.source === "object" && link.source
-            ? link.source.id
-            : link.source;
+            typeof link.source === "object" && link.source
+                ? link.source.id
+                : link.source;
         const targetId =
-        typeof link.target === "object" && link.target
-            ? link.target.id
-            : link.target;
+            typeof link.target === "object" && link.target
+                ? link.target.id
+                : link.target;
         return sourceId === node.id || targetId === node.id;
     })
-    .map((link: UIGraphLink) => {
-        let sourceName: string;
-        if (typeof link.source === "object" && link.source) {
-            sourceName = link.source.name;
-        } else {
-        // Lookup in graphData.nodes if link.source is a string
-            const found = graphData.nodes.find(n => n.id === link.source);
-            sourceName = found ? found.name : String(link.source);
-        }
+        .map((link: UIGraphLink) => {
+            let sourceName: string;
+            if (typeof link.source === "object" && link.source) {
+                sourceName = link.source.name;
+            } else {
+                // Lookup in graphData.nodes if link.source is a string
+                const found = graphData.nodes.find(n => n.id === link.source);
+                sourceName = found ? found.name : String(link.source);
+            }
 
-        let targetName: string;
-        if (typeof link.target === "object" && link.target) {
-            targetName = link.target.name;
-        } else {
-            const found = graphData.nodes.find(n => n.id === link.target);
-            targetName = found ? found.name : String(link.target);
-        }
+            let targetName: string;
+            if (typeof link.target === "object" && link.target) {
+                targetName = link.target.name;
+            } else {
+                const found = graphData.nodes.find(n => n.id === link.target);
+                targetName = found ? found.name : String(link.target);
+            }
 
-        let label: string;
-        label = link.label;
+            let label: string;
+            label = link.label;
 
-        // Attach the precomputed names to the link object
-        return {label, sourceName, targetName};
-    });
+            // Attach the precomputed names to the link object
+            return { label, sourceName, targetName };
+        });
 
     const showRelationshipsForNode = graphData.settings.showNodeRelationships[node.id];
 
@@ -102,7 +102,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
                 {node.info}
             </ReactMarkdown>
 
-            
+
             {showRelationshipsForNode && relatedLinks.length > 0 ? (
                 <div className="mt-2">
                     <h4 className="text-md font-semibold">Relationships:</h4>
@@ -118,44 +118,52 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
                 </div>
             ) : showRelationshipsForNode ? (
                 <p className="text-gray-500">No relationships found.</p>
-            ) : null }
+            ) : null}
         </div>
     );
 };
 
 function stripUIGraph(uiGraph: UIGraph): KnowledgeGraph {
     return {
-      nodes: uiGraph.nodes.map((node) => ({
-        id: node.id,
-        name: node.name,
-        info: node.info,
-      })),
-      links: uiGraph.links.map((link) => {
-        // Extract source and target as strings.
-        const sourceId =
-          typeof link.source === "object" ? link.source.id : link.source;
-        const targetId =
-          typeof link.target === "object" ? link.target.id : link.target;
-        return {
-          source: String(sourceId),
-          target: String(targetId),
-          label: link.label,
-        };
-      }),
-      settings: uiGraph.settings
+        nodes: uiGraph.nodes.map((node) => ({
+            id: node.id,
+            name: node.name,
+            info: node.info,
+        })),
+        links: uiGraph.links.map((link) => {
+            // Extract source and target as strings.
+            const sourceId =
+                typeof link.source === "object" ? link.source.id : link.source;
+            const targetId =
+                typeof link.target === "object" ? link.target.id : link.target;
+            return {
+                source: String(sourceId),
+                target: String(targetId),
+                label: link.label,
+            };
+        }),
+        settings: uiGraph.settings
     };
 }
 
 function djb2(str: string): number {
     let hash = 5381;
     for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+        hash = ((hash << 5) + hash) + str.charCodeAt(i);
     }
-    return hash >>> 0; 
-  }
+    return hash >>> 0;
+}
 
 
-export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFullScreen: boolean, onToggleFullScreen: () => void}) {
+export default function NetworkGraph({
+    isFullScreen,
+    isGraphVisible,
+    onToggleFullScreen
+}: {
+    isFullScreen: boolean,
+    isGraphVisible: boolean,
+    onToggleFullScreen: () => void
+}) {
     //   const [graphData, setGraphData] = useState(initialData)
     const { currentConversationId } = useChat();
     const { graphData, updateConversationGraphData } = useCurrentGraph();
@@ -204,45 +212,45 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
         (node: NodeObject | null, previousNode?: NodeObject | null) => {
             const typedNode = node as UIGraphNode | null;
 
-          // Set highlight for the hovered node, if any
-          setHighlightNodes(new Set(node ? [node.id] : []));
-          
-          // Filter links that involve the hovered node, safely extracting IDs
-          setHighlightLinks(
-            new Set(
-              typedNode
-                ? uiGraphData.links
-                    .filter((link) => {
-                      const sourceId =
-                        typeof link.source === "object" && link.source
-                          ? link.source.id
-                          : link.source;
-                      const targetId =
-                        typeof link.target === "object" && link.target
-                          ? link.target.id
-                          : link.target;
-                      return sourceId === typedNode.id || targetId === typedNode.id;
-                    })
-                    .map((link) => {
-                      const sourceId =
-                        typeof link.source === "object" && link.source
-                          ? link.source.id
-                          : link.source;
-                      const targetId =
-                        typeof link.target === "object" && link.target
-                          ? link.target.id
-                          : link.target;
-                      // If link.id is missing, create one from source and target IDs
-                      return link.id || `${sourceId}-${targetId}`;
-                    })
-                : []
-            )
-          );
+            // Set highlight for the hovered node, if any
+            setHighlightNodes(new Set(node ? [node.id] : []));
+
+            // Filter links that involve the hovered node, safely extracting IDs
+            setHighlightLinks(
+                new Set(
+                    typedNode
+                        ? uiGraphData.links
+                            .filter((link) => {
+                                const sourceId =
+                                    typeof link.source === "object" && link.source
+                                        ? link.source.id
+                                        : link.source;
+                                const targetId =
+                                    typeof link.target === "object" && link.target
+                                        ? link.target.id
+                                        : link.target;
+                                return sourceId === typedNode.id || targetId === typedNode.id;
+                            })
+                            .map((link) => {
+                                const sourceId =
+                                    typeof link.source === "object" && link.source
+                                        ? link.source.id
+                                        : link.source;
+                                const targetId =
+                                    typeof link.target === "object" && link.target
+                                        ? link.target.id
+                                        : link.target;
+                                // If link.id is missing, create one from source and target IDs
+                                return link.id || `${sourceId}-${targetId}`;
+                            })
+                        : []
+                )
+            );
 
             // Set the hover state
             setHoverNode(typedNode);
 
-            if (typedNode){
+            if (typedNode) {
                 typedNode.fx = typedNode.x;
                 typedNode.fy = typedNode.y;
             } else {
@@ -251,15 +259,15 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     n.fy = undefined;
                 });
             }
-      
-          // Reheat the simulation to apply changes
-          if (forceGraphRef.current) {
-            forceGraphRef.current.d3ReheatSimulation();
-          }
+
+            // Reheat the simulation to apply changes
+            if (forceGraphRef.current) {
+                forceGraphRef.current.d3ReheatSimulation();
+            }
         },
         [uiGraphData.links, uiGraphData.nodes] // Include additional dependencies if needed
     );
-    
+
     const handleNodeClick = useCallback((node: NodeObject) => {
         const typedNode = node as UIGraphNode;
         setSelectedNode(typedNode);
@@ -275,12 +283,12 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
         }
         const sourceId =
             typeof typedLink.source === "object" && typedLink.source
-            ? typedLink.source.id
-            : typedLink.source;
+                ? typedLink.source.id
+                : typedLink.source;
         const targetId =
             typeof typedLink.target === "object" && typedLink.target
-            ? typedLink.target.id
-            : typedLink.target;
+                ? typedLink.target.id
+                : typedLink.target;
 
         setHighlightNodes(new Set([sourceId, targetId].filter(Boolean) as string[]));
         setHighlightLinks(new Set([typedLink.id || `${sourceId}-${targetId}`]));
@@ -291,8 +299,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
         const typedNode = node as UIGraphNode;
         const hash = djb2(typedNode.id);
         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId];
-            return palette.colors[hash % palette.colors.length];
-        },
+        return palette.colors[hash % palette.colors.length];
+    },
         [uiGraphData.settings.colorPaletteId]
     );
 
@@ -350,11 +358,11 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     };
                 });
 
-            setNewNodeData({ 
-                name: selectedNode.name, 
-                info: selectedNode.info, 
+            setNewNodeData({
+                name: selectedNode.name,
+                info: selectedNode.info,
                 showRelationships: uiGraphData.settings.showNodeRelationships[selectedNode.id],
-                edges: nodeEdges 
+                edges: nodeEdges
             });
             setIsDialogOpen(true);
         }
@@ -362,36 +370,36 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
 
     const handleDeleteNode = () => {
         if (selectedNode) {
-          const newNodes = uiGraphData.nodes.filter(
-            (node) => node.id !== selectedNode.id
-          );
-          const newLinks = uiGraphData.links.filter((link) => {
-            const sourceId =
-              typeof link.source === "object" ? link.source.id : link.source;
-            const targetId =
-              typeof link.target === "object" ? link.target.id : link.target;
-            return sourceId !== selectedNode.id && targetId !== selectedNode.id;
-          });
+            const newNodes = uiGraphData.nodes.filter(
+                (node) => node.id !== selectedNode.id
+            );
+            const newLinks = uiGraphData.links.filter((link) => {
+                const sourceId =
+                    typeof link.source === "object" ? link.source.id : link.source;
+                const targetId =
+                    typeof link.target === "object" ? link.target.id : link.target;
+                return sourceId !== selectedNode.id && targetId !== selectedNode.id;
+            });
 
-          const currentSettings = uiGraphData.settings;
-          const newShowRelationships = Object.fromEntries(
-            Object.entries(currentSettings.showNodeRelationships).filter(
-              ([key]) => key !== selectedNode.id
-            )
-          );
-          const newSettings = {
-            ...currentSettings,
-            showNodeRelationships: newShowRelationships,
-          };
-          
-          const newUIGraph: UIGraph = { nodes: newNodes, links: newLinks, settings: newSettings };
-          const pureGraph = stripUIGraph(newUIGraph);
-          
-          if (currentConversationId) {
-            updateConversationGraphData(currentConversationId, pureGraph);
-          }
-          
-          setSelectedNode(null);
+            const currentSettings = uiGraphData.settings;
+            const newShowRelationships = Object.fromEntries(
+                Object.entries(currentSettings.showNodeRelationships).filter(
+                    ([key]) => key !== selectedNode.id
+                )
+            );
+            const newSettings = {
+                ...currentSettings,
+                showNodeRelationships: newShowRelationships,
+            };
+
+            const newUIGraph: UIGraph = { nodes: newNodes, links: newLinks, settings: newSettings };
+            const pureGraph = stripUIGraph(newUIGraph);
+
+            if (currentConversationId) {
+                updateConversationGraphData(currentConversationId, pureGraph);
+            }
+
+            setSelectedNode(null);
         }
     };
 
@@ -430,7 +438,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     };
                 })
                 .filter((link) => link !== null);
-            
+
             const currentSettings = uiGraphData.settings;
 
             const updatedShowRelationships = {
@@ -442,9 +450,9 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 ...currentSettings,
                 showNodeRelationships: updatedShowRelationships,
             };
-            
-            const newUIGraph: UIGraph = { 
-                nodes: [...uiGraphData.nodes, newNode], 
+
+            const newUIGraph: UIGraph = {
+                nodes: [...uiGraphData.nodes, newNode],
                 links: [...uiGraphData.links, ...newLinks],
                 settings: newSettings
             };
@@ -472,42 +480,42 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 // Remove all edges that involve the selected node
                 return sourceId !== selectedNode.id && targetId !== selectedNode.id;
             });
-              
+
             const newLinks = newNodeData.edges
-              .map((edge) => {
-                const sourceId =
-                  typeof edge.direction === "string" && edge.direction === "source"
-                    ? selectedNode.id
-                    : edge.nodeId;
-                const targetId =
-                  typeof edge.direction === "string" && edge.direction === "target"
-                    ? selectedNode.id
-                    : edge.nodeId;
-            
-                // Ensure sourceId and targetId are valid
-                if (!sourceId || !targetId) return null;
-            
-                // Check if an edge already exists between these nodes in updatedLinks.
-                const edgeAlreadyExists = updatedLinks.some((link) => {
-                  const existingSource =
-                    typeof link.source === "object" && link.source ? link.source.id : link.source;
-                  const existingTarget =
-                    typeof link.target === "object" && link.target ? link.target.id : link.target;
-                  return existingSource === sourceId && existingTarget === targetId;
-                });
-            
-                if (edgeAlreadyExists) {
-                  console.warn("Edge already exists between these nodes", edge);
-                  return null;
-                }
-            
-                return {
-                  source: String(sourceId),
-                  target: String(targetId),
-                  label: edge.label,
-                } as UIGraphLink;
-            })
-            .filter((link): link is UIGraphLink => link !== null);
+                .map((edge) => {
+                    const sourceId =
+                        typeof edge.direction === "string" && edge.direction === "source"
+                            ? selectedNode.id
+                            : edge.nodeId;
+                    const targetId =
+                        typeof edge.direction === "string" && edge.direction === "target"
+                            ? selectedNode.id
+                            : edge.nodeId;
+
+                    // Ensure sourceId and targetId are valid
+                    if (!sourceId || !targetId) return null;
+
+                    // Check if an edge already exists between these nodes in updatedLinks.
+                    const edgeAlreadyExists = updatedLinks.some((link) => {
+                        const existingSource =
+                            typeof link.source === "object" && link.source ? link.source.id : link.source;
+                        const existingTarget =
+                            typeof link.target === "object" && link.target ? link.target.id : link.target;
+                        return existingSource === sourceId && existingTarget === targetId;
+                    });
+
+                    if (edgeAlreadyExists) {
+                        console.warn("Edge already exists between these nodes", edge);
+                        return null;
+                    }
+
+                    return {
+                        source: String(sourceId),
+                        target: String(targetId),
+                        label: edge.label,
+                    } as UIGraphLink;
+                })
+                .filter((link): link is UIGraphLink => link !== null);
 
             const currentSettings = uiGraphData.settings;
 
@@ -521,8 +529,8 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 showNodeRelationships: updatedShowRelationships,
             };
 
-            const newUIGraph: UIGraph = { 
-                nodes: updatedNodes, 
+            const newUIGraph: UIGraph = {
+                nodes: updatedNodes,
                 links: [...updatedLinks, ...newLinks],
                 settings: newSettings
             };
@@ -567,9 +575,10 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
     const handleSearchSelect = (node: UIGraphNode) => {
         console.log("Zooming to", node);
         console.log("Zooming to", node.id);
+        console.log(node.x, node.y);
         // Zoom to the node
         if (forceGraphRef.current && node) {
-          forceGraphRef.current.zoomToFit(500, 400, (n) => String(n.id) === String(node.id));
+          forceGraphRef.current.zoomToFit(500, 250, (n) => String(n.id) === String(node.id));
         }
     };
 
@@ -578,18 +587,18 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
         console.log(currentConversationId)
         console.log(uiGraphData.settings)
         if (currentConversationId && uiGraphData.settings) {
-          // Create a new graph object with updated settings:
-          const newGraph = {
-            ...uiGraphData,
-            settings: {
-              ...uiGraphData.settings,
-              colorPaletteId: palette.id,
-            },
-          };
-          console.log("new graph", newGraph)
-          const pureGraph = stripUIGraph(newGraph);
-          console.log("pure graph", pureGraph)
-          updateConversationGraphData(currentConversationId, pureGraph);
+            // Create a new graph object with updated settings:
+            const newGraph = {
+                ...uiGraphData,
+                settings: {
+                    ...uiGraphData.settings,
+                    colorPaletteId: palette.id,
+                },
+            };
+            console.log("new graph", newGraph)
+            const pureGraph = stripUIGraph(newGraph);
+            console.log("pure graph", pureGraph)
+            updateConversationGraphData(currentConversationId, pureGraph);
         }
     };
 
@@ -609,7 +618,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                 onColorPaletteSelect={handleColorPaletteSelect}
                 currentColorPalette={colorPaletteById[uiGraphData.settings.colorPaletteId]}
             />
-            <div className="flex-grow">
+            <div className={`flex-grow transition-opacity duration-400 ${isGraphVisible ? "visible opacity-100" : "invisible opacity-0"}`}>
                 <ForceGraph2D
                     ref={forceGraphRef}
                     graphData={uiGraphData}
@@ -626,11 +635,11 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     d3VelocityDecay={0.5}
                     {...({
                         d3Force: (force: any) => {
-                          force("link").distance(1000);
-                          force("charge").strength(-500);
-                          force("center").strength(0.05);
+                            force("link").distance(1000);
+                            force("charge").strength(-500);
+                            force("center").strength(0.05);
                         }
-                      } as any)}
+                    } as any)}
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.name;
                         const fontSize = 14 / globalScale;
@@ -706,7 +715,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                         // Highlight node
                         if (highlightNodes.has(node.id)) {
                             ctx.strokeStyle = paletteNodeHighlightColor;
-                            ctx.lineWidth = 2;
+                            ctx.lineWidth = 1;
                             ctx.stroke();
                         }
                     }}
@@ -747,10 +756,10 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                                     <div className="absolute left-1/2 -top-[140px] w-[250px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
                                         <p>Supports:</p>
                                         <ul className="mt-1 list-disc list-inside">
-                                        <li>Markdown (e.g., <strong>bold</strong>, <em>italic</em>)</li><br></br>
-                                        <li>LaTeX (e.g., $(1+x)^2$)</li><br></br>
-                                        <li>Code Blocks (e.g., <code>```python print("Hello") ```</code>)</li><br></br>
-                                        <li>Images (e.g., <code>![alt text](https://example.com/image.png)</code>)</li>
+                                            <li>Markdown (e.g., <strong>bold</strong>, <em>italic</em>)</li><br></br>
+                                            <li>LaTeX (e.g., $(1+x)^2$)</li><br></br>
+                                            <li>Code Blocks (e.g., <code>```python print("Hello") ```</code>)</li><br></br>
+                                            <li>Images (e.g., <code>![alt text](https://example.com/image.png)</code>)</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -818,16 +827,16 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                             </Label>
                             <div className="col-span-3">
                                 <input
-                                type="checkbox"
-                                id="showRelationships"
-                                checked={newNodeData.showRelationships}
-                                onChange={(e) =>
-                                    setNewNodeData((prev) => ({ ...prev, showRelationships: e.target.checked }))
-                                }
-                                className="h-5 w-5 accent-black"
+                                    type="checkbox"
+                                    id="showRelationships"
+                                    checked={newNodeData.showRelationships}
+                                    onChange={(e) =>
+                                        setNewNodeData((prev) => ({ ...prev, showRelationships: e.target.checked }))
+                                    }
+                                    className="h-5 w-5 accent-black"
                                 />
                             </div>
-                            </div>
+                        </div>
                     </div>
                     <DialogFooter className="sticky bottom-0 pt-2">
                         <Button onClick={handleDialogSubmit}>{dialogMode === "add" ? "Add" : "Update"}</Button>
