@@ -33,15 +33,12 @@ export async function* streamModelResponse(messages: Message[]) {
     if (!reader) throw new Error("No readable stream found");
 
     const decoder = new TextDecoder();
-    let resultText = "";
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
       const chunk = decoder.decode(value, { stream: true });
-      resultText += chunk;
-
       yield chunk;
     }
   } catch (error) {

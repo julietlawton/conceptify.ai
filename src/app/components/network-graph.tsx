@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState, useRef, useEffect, SetStateAction, RefObject } from "react"
+import { useCallback, useState, useRef, useEffect } from "react"
 import dynamic from "next/dynamic"
 import ReactMarkdown from "react-markdown";
 import remarkMath from 'remark-math';
@@ -28,8 +28,6 @@ import { InformationCircleIcon } from "@heroicons/react/24/outline";
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
 import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
 import {
-    GraphNode,
-    GraphLink,
     KnowledgeGraph,
     UIGraphNode,
     UIGraphLink,
@@ -38,7 +36,7 @@ import {
     ColorPalette
 } from "../lib/types";
 import { inter } from "../ui/fonts";
-import { colorPaletteById, ColorPalettes } from "../ui/color-palettes";
+import { colorPaletteById} from "../ui/color-palettes";
 
 interface NewNodeData {
     name: string;
@@ -78,8 +76,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
                 targetName = found ? found.name : String(link.target);
             }
 
-            let label: string;
-            label = link.label;
+            const label = link.label;
 
             // Attach the precomputed names to the link object
             return { label, sourceName, targetName };
@@ -178,7 +175,7 @@ export default function NetworkGraph({
     const [highlightLinks, setHighlightLinks] = useState(new Set())
     const [hoverNode, setHoverNode] = useState<UIGraphNode | null>(null)
     const [selectedNode, setSelectedNode] = useState<UIGraphNode | null>(null)
-    const [hoverLink, setHoverLink] = useState<UIGraphLink | null>(null)
+    //const [setHoverLink] = useState<UIGraphLink | null>(null)
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [dialogMode, setDialogMode] = useState<"add" | "edit">("add")
@@ -209,7 +206,7 @@ export default function NetworkGraph({
     }, [graphData]);
 
     const handleNodeHover = useCallback(
-        (node: NodeObject | null, previousNode?: NodeObject | null) => {
+        (node: NodeObject | null) => {
             const typedNode = node as UIGraphNode | null;
 
             // Set highlight for the hovered node, if any
@@ -278,7 +275,7 @@ export default function NetworkGraph({
         if (!typedLink) {
             setHighlightNodes(new Set());
             setHighlightLinks(new Set());
-            setHoverLink(null);
+            //setHoverLink(null);
             return;
         }
         const sourceId =
@@ -292,7 +289,7 @@ export default function NetworkGraph({
 
         setHighlightNodes(new Set([sourceId, targetId].filter(Boolean) as string[]));
         setHighlightLinks(new Set([typedLink.id || `${sourceId}-${targetId}`]));
-        setHoverLink(typedLink);
+        //setHoverLink(typedLink);
     }, [])
 
     const nodeColor = useCallback((node: NodeObject) => {
@@ -318,7 +315,7 @@ export default function NetworkGraph({
             const linkHighlightColor = colorPaletteById[uiGraphData.settings.colorPaletteId].linkHighlight;
             return highlightLinks.has(typedLink.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde"
         },
-        [highlightLinks],
+        [highlightLinks, uiGraphData.settings.colorPaletteId],
     )
 
     const handleResetView = useCallback(() => {
@@ -634,11 +631,13 @@ export default function NetworkGraph({
                     height={dimensions.height}
                     d3VelocityDecay={0.5}
                     {...({
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         d3Force: (force: any) => {
                             force("link").distance(1000);
                             force("charge").strength(-500);
                             force("center").strength(0.05);
                         }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } as any)}
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.name;
@@ -705,8 +704,8 @@ export default function NetworkGraph({
                         // Center the block of wrapped text vertically.
                         const totalHeight = lines.length * lineHeight;
 
-                        // @ts-expect-error
-                        let startY = node.y - totalHeight / 2 + lineHeight / 2;
+                        // @ts-expect-error node.y can be undefined
+                        const startY = node.y - totalHeight / 2 + lineHeight / 2;
 
                         lines.forEach((line, i) => {
                             ctx.fillText(line, node.x ?? 0, startY + i * lineHeight);
@@ -758,7 +757,7 @@ export default function NetworkGraph({
                                         <ul className="mt-1 list-disc list-inside">
                                             <li>Markdown (e.g., <strong>bold</strong>, <em>italic</em>)</li><br></br>
                                             <li>LaTeX (e.g., $(1+x)^2$)</li><br></br>
-                                            <li>Code Blocks (e.g., <code>```python print("Hello") ```</code>)</li><br></br>
+                                            <li>Code Blocks (e.g., <code>```python print(&quot;Hello&quot;) ```</code>)</li><br></br>
                                             <li>Images (e.g., <code>![alt text](https://example.com/image.png)</code>)</li>
                                         </ul>
                                     </div>

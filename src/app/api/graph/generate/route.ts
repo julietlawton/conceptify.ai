@@ -83,7 +83,6 @@ export async function POST(req: Request) {
     console.log(assistantMessage);
     console.log(graph_prompt);
 
-    // @ts-ignore
     const result = await generateObject({
         model: openai("gpt-4o"),
         prompt: graph_prompt,

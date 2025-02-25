@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ArrowUpIcon } from "@heroicons/react/24/solid";
 
 export default function ChatInput({ sendMessage, input, setInput, isLoading }:{

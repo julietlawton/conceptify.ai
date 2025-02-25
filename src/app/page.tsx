@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback, Suspense } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Chat from "./components/chat"
 import SideNav from "@/app/components/side-nav";
 import NetworkGraph from "./components/network-graph"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ViewColumnsIcon, Bars3Icon, Squares2X2Icon } from "@heroicons/react/24/solid";
+import { ViewColumnsIcon, Bars3Icon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
 
 export default function Home() {
@@ -15,7 +15,6 @@ export default function Home() {
   const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
   const { currentConversationId, conversations, coldStartGraph } = useChat();
 
-  const currentConversation = currentConversationId ? conversations[currentConversationId] : null;
   const graphData = currentConversationId ? conversations[currentConversationId]?.graphData || null : null;
   const [graphVisible, setGraphVisible] = useState(true);
 

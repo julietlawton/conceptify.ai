@@ -2,7 +2,6 @@
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { useChat } from "../context/ChatContext";
-import { Conversation } from "../lib/types";
 
 export default function SideNav() {
     const {

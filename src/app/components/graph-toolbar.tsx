@@ -22,7 +22,7 @@ interface GraphToolbarProps {
     onDeleteNode: () => void
     onResetView: () => void
     onToggleFullScreen: () => void
-    selectedNode: any | null
+    selectedNode: UIGraphNode | null
     isFullScreen: boolean
     onDeleteGraph: () => void
     onSearchSelect: (node: UIGraphNode) => void;

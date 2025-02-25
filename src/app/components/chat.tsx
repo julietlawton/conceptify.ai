@@ -1,13 +1,12 @@
-import { createContext, useContext, useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect} from 'react';
 import { useChat, useCurrentGraph } from '../context/ChatContext';
 import { Message } from 'ai';
 import { getModelResponse, streamModelResponse } from '../lib/model';
 import ChatInput from './chat-input'
-import { SparklesIcon, ArrowRightEndOnRectangleIcon } from '@heroicons/react/24/solid';
-import { send, title } from 'process';
 import { ChatBubble } from './chat-bubble';
-import { KnowledgeGraph } from '../lib/types';
+import { GraphLink, GraphNode, KnowledgeGraph } from '../lib/types';
 import { ColorPalettes } from '../ui/color-palettes';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function Chat() {
     const {
@@ -24,7 +23,6 @@ export default function Chat() {
 
     const [input, setInput] = useState("");
     const [localMessages, setLocalMessages] = useState<Message[]>([]);
-    const [isGraphLoading, setIsGraphLoading] = useState(false);
     const [loadingMessageId, setLoadingMessageId] = useState<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -37,12 +35,19 @@ export default function Chat() {
     useEffect(() => {
         // Whenever the conversation changes, reset localMessages to match it
         setLocalMessages(messages);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentConversationId]);
 
+    // useEffect(() => {
+    //     if (currentConversationId && conversations[currentConversationId]) {
+    //       setLocalMessages(conversations[currentConversationId].messages);
+    //     }
+    //   }, [currentConversationId, conversations]);
+
     const generateChatTitle = async (message: string) => {
-        const messages: Message[] = [
+        const introMessages: Message[] = [
             {
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 role: "system",
                 content: `
                     You are an AI that generates concise and descriptive titles for conversations. 
@@ -53,14 +58,14 @@ export default function Chat() {
                 `
             },
             {
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 role: "user",
                 content: `Generate a short, natural, and descriptive title for a conversation 
                 that starts with this message:\n\n"${message}"\n\nTitle:`
             }
         ];
 
-        const titleResponse = await getModelResponse(messages);
+        const titleResponse = await getModelResponse(introMessages);
         console.log(titleResponse)
 
         if (titleResponse) {
@@ -72,7 +77,7 @@ export default function Chat() {
         if (!input.trim()) return;
 
         const userMessage: Message = {
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             role: "user",
             content: input,
             createdAt: new Date(),
@@ -97,7 +102,7 @@ export default function Chat() {
         let streamedContent = "";
 
         const assistantMessage: Message = {
-            id: crypto.randomUUID(),
+            id: uuidv4(),
             role: "assistant",
             content: "",
             createdAt: new Date(),
@@ -160,8 +165,8 @@ export default function Chat() {
             console.log("Data returned from model:", newGraphData);
 
             // Convert nodes into correct format with unique IDs
-            const newNodes = newGraphData.nodes.map((node: any) => ({
-                id: crypto.randomUUID(),
+            const newNodes = newGraphData.nodes.map((node: GraphNode) => ({
+                id: uuidv4(),
                 name: node.name,
                 info: node.info,
             }));
@@ -171,7 +176,7 @@ export default function Chat() {
 
             // Convert links to correct format with ID references
             const newLinks = newGraphData.links
-                .map((link: any) => {
+                .map((link: GraphLink) => {
                     const sourceNode = allNodes.find(node => node.name === link.source);
                     const targetNode = allNodes.find(node => node.name === link.target);
 
