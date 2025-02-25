@@ -89,7 +89,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
 
     return (
         <div
-            className="bg-white p-4 rounded-lg shadow-lg absolute bottom-4 left-1/2 transform -translate-x-1/2 overflow-y-auto"
+            className="bg-white p-4 max-h-[75%] rounded-lg shadow-lg absolute bottom-4 left-1/2 transform -translate-x-1/2 overflow-y-auto"
             style={{ zIndex: 10 }}
         >
             <h3 className="text-lg font-semibold mb-2">{node.name}</h3>
@@ -615,7 +615,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     graphData={uiGraphData}
                     nodeColor={nodeColor}
                     linkColor={linkColor}
-                    nodeLabel={undefined}
+                    nodeLabel={null}
                     onNodeHover={handleNodeHover}
                     onNodeClick={handleNodeClick}
                     onLinkHover={handleLinkHover}
@@ -634,7 +634,7 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.name;
                         const fontSize = 14 / globalScale;
-                        ctx.font = `${fontSize}px Arial`;
+                        ctx.font = `${fontSize}px ${inter.style.fontFamily}`;
 
                         // Maximum width allowed for a line (adjust as needed)
                         const maxWidth = 100 / globalScale;
@@ -695,7 +695,10 @@ export default function NetworkGraph({ isFullScreen, onToggleFullScreen}: { isFu
 
                         // Center the block of wrapped text vertically.
                         const totalHeight = lines.length * lineHeight;
-                        let startY = node.y ?? 0 - totalHeight / 2 + lineHeight / 2;
+
+                        // @ts-expect-error
+                        let startY = node.y - totalHeight / 2 + lineHeight / 2;
+
                         lines.forEach((line, i) => {
                             ctx.fillText(line, node.x ?? 0, startY + i * lineHeight);
                         });
