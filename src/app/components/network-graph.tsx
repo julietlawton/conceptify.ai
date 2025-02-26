@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useChat, useCurrentGraph } from "../context/ChatContext"
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
+import { v4 as uuidv4 } from 'uuid';
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
 import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
@@ -143,15 +144,6 @@ function stripUIGraph(uiGraph: UIGraph): KnowledgeGraph {
     };
 }
 
-function djb2(str: string): number {
-    let hash = 5381;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) + hash) + str.charCodeAt(i);
-    }
-    return hash >>> 0;
-}
-
-
 export default function NetworkGraph({
     isFullScreen,
     isGraphVisible,
@@ -161,7 +153,6 @@ export default function NetworkGraph({
     isGraphVisible: boolean,
     onToggleFullScreen: () => void
 }) {
-    //   const [graphData, setGraphData] = useState(initialData)
     const { currentConversationId } = useChat();
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
@@ -175,11 +166,10 @@ export default function NetworkGraph({
     const [highlightLinks, setHighlightLinks] = useState(new Set())
     const [hoverNode, setHoverNode] = useState<UIGraphNode | null>(null)
     const [selectedNode, setSelectedNode] = useState<UIGraphNode | null>(null)
-    //const [setHoverLink] = useState<UIGraphLink | null>(null)
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [dialogMode, setDialogMode] = useState<"add" | "edit">("add")
-    const [newNodeData, setNewNodeData] = useState<NewNodeData>({ name: "", info: "", showRelationships: true, edges: [] })
+    const [newNodeData, setNewNodeData] = useState<NewNodeData>({ name: "", info: "", showRelationships: false, edges: [] })
     const graphRef = useRef<HTMLDivElement | null>(null);
     const forceGraphRef = useRef<ForceGraphMethods | undefined>(undefined);
 
@@ -262,7 +252,7 @@ export default function NetworkGraph({
                 forceGraphRef.current.d3ReheatSimulation();
             }
         },
-        [uiGraphData.links, uiGraphData.nodes] // Include additional dependencies if needed
+        [uiGraphData.links, uiGraphData.nodes]
     );
 
     const handleNodeClick = useCallback((node: NodeObject) => {
@@ -275,7 +265,6 @@ export default function NetworkGraph({
         if (!typedLink) {
             setHighlightNodes(new Set());
             setHighlightLinks(new Set());
-            //setHoverLink(null);
             return;
         }
         const sourceId =
@@ -289,14 +278,13 @@ export default function NetworkGraph({
 
         setHighlightNodes(new Set([sourceId, targetId].filter(Boolean) as string[]));
         setHighlightLinks(new Set([typedLink.id || `${sourceId}-${targetId}`]));
-        //setHoverLink(typedLink);
     }, [])
 
     const nodeColor = useCallback((node: NodeObject) => {
         const typedNode = node as UIGraphNode;
-        const hash = djb2(typedNode.id);
         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId];
-        return palette.colors[hash % palette.colors.length];
+        const index = uiGraphData.nodes.findIndex(n => n.id === typedNode.id);
+        return palette.colors[index % palette.colors.length];
     },
         [uiGraphData.settings.colorPaletteId]
     );
@@ -406,7 +394,7 @@ export default function NetworkGraph({
 
         if (dialogMode === "add") {
             const newNode = {
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 name: newNodeData.name,
                 info: newNodeData.info,
                 showRelationships: newNodeData.showRelationships,
