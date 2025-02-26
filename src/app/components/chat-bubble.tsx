@@ -131,37 +131,39 @@ export function ChatBubble({
                     {msg.role === "user" ? (
                         <span>{msg.content}</span>
                     ) : (
-                        // <Markdown>{msg.content}</Markdown>
-                        <ReactMarkdown
-                            remarkPlugins={[remarkMath, remarkGfm]}
-                            rehypePlugins={[rehypeKatex, rehypeHighlight]}
-                            className="prose prose-sm space-y-4"
-                            components={components}
-                        >
-
-                            {msg.content}
-                        </ReactMarkdown>
+                        msg.content.trim() === '' ? (
+                            <div className="animate-pulse text-gray-500">Generating...</div>
+                        ) : (
+                            <ReactMarkdown
+                                remarkPlugins={[remarkMath, remarkGfm]}
+                                rehypePlugins={[rehypeKatex, rehypeHighlight]}
+                                className="prose prose-sm space-y-4"
+                                components={components}
+                            >
+                                {msg.content}
+                            </ReactMarkdown>
+                        )
                     )}
 
-                    {/* Show button only when message has fully streamed (isLoading is false) */}
-                    {msg.role === "assistant" && !isLoading && (
-                        <button className={`mt-2 flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md 
+                {/* Show button only when message has fully streamed (isLoading is false) */}
+                {msg.role === "assistant" && !isLoading && (
+                    <button className={`mt-2 flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md 
                             ${isButtonDisabled ? "cursor-not-allowed opacity-50" : "border hover:bg-gray-100"}`}
-                            onClick={onAddToGraph}
-                            disabled={isButtonDisabled}
-                        >
-                            {loadingMessageId === msg.id ? (  // Show spinner only on clicked button
-                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <>
-                                    <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
-                                    <span>Add to graph</span>
-                                </>
-                            )}
-                        </button>
-                    )}
-                </div>
+                        onClick={onAddToGraph}
+                        disabled={isButtonDisabled}
+                    >
+                        {loadingMessageId === msg.id ? (  // Show spinner only on clicked button
+                            <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                        ) : (
+                            <>
+                                <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
+                                <span>Add to graph</span>
+                            </>
+                        )}
+                    </button>
+                )}
             </div>
         </div>
+        </div >
     );
 }

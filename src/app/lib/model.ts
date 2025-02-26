@@ -8,7 +8,21 @@ export async function getModelResponse(messages: Message[]) {
       body: JSON.stringify({ messages, stream: false }),
     });
 
-    if (!response.ok) throw new Error("Failed to fetch response");
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch response";
+      switch (response.status) {
+        case 504:
+          errorMessage = "Request timed out";
+          break;
+        case 500:
+          errorMessage = "Internal server error";
+          break;
+        default:
+          errorMessage = `Error: ${response.status}`;
+          break;
+      }
+      throw new Error(errorMessage);
+    }
 
     const { text } = await response.json();
 
@@ -27,7 +41,21 @@ export async function* streamModelResponse(messages: Message[]) {
       body: JSON.stringify({ messages, stream: true }),
     });
 
-    if (!response.ok) throw new Error("Failed to fetch response");
+    if (!response.ok) {
+      let errorMessage = "Failed to fetch response";
+      switch (response.status) {
+        case 504:
+          errorMessage = "Request timed out. Please try again.";
+          break;
+        case 500:
+          errorMessage = "Internal server error. Please try again.";
+          break;
+        default:
+          errorMessage = `Error: ${response.status}`;
+          break;
+      }
+      throw new Error(errorMessage);
+    }
 
     const reader = response.body?.getReader();
     if (!reader) throw new Error("No readable stream found");
@@ -43,6 +71,6 @@ export async function* streamModelResponse(messages: Message[]) {
     }
   } catch (error) {
     console.error("Error streaming text:", error);
-    yield "Error generating response.";
+    yield error instanceof Error ? error.message : "Error generating response.";
   }
 }

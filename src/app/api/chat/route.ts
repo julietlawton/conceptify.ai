@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { generateText, Message, streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 
+export const maxDuration = 60;
+
 export async function POST(req: Request) {
     const { messages, stream }: { messages: Message[]; stream?: boolean } = await req.json();
 
