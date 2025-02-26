@@ -87,3 +87,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+.hover-card ul, .hover-card ol {
+  list-style: revert;
+  padding-left: 1.5rem;
+}
+
+.hover-card li {
+  display: list-item !important;
+  margin-bottom: 0.25rem;
+}

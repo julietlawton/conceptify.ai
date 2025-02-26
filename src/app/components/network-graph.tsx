@@ -7,6 +7,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import rehypeHighlight from "rehype-highlight";
+import remarkBreaks from "remark-breaks";
 import { GraphToolbar } from "./graph-toolbar"
 import {
     Dialog,
@@ -44,6 +45,14 @@ interface NewNodeData {
     info: string;
     showRelationships: boolean;
     edges: NodeEdge[];
+}
+
+function djb2(str: string): number {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    }
+    return hash >>> 0;
 }
 
 const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGraph }) => {
@@ -84,6 +93,7 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
         });
 
     const showRelationshipsForNode = graphData.settings.showNodeRelationships[node.id];
+    console.log(node.info)
 
     return (
         <div
@@ -91,15 +101,15 @@ const NodeTooltip = ({ node, graphData }: { node: UIGraphNode, graphData: UIGrap
             style={{ zIndex: 10 }}
         >
             <h3 className="text-lg font-semibold mb-2">{node.name}</h3>
-            <ReactMarkdown
-                remarkPlugins={[remarkMath]}
-                rehypePlugins={[rehypeKatex, rehypeHighlight]}
-                className="prose prose-sm"
-            >
+            <div className="hover-card prose space-y-2">
+                <ReactMarkdown
+                    remarkPlugins={[remarkMath, remarkBreaks]}
+                    rehypePlugins={[rehypeKatex, rehypeHighlight]}
+                >
 
-                {node.info}
-            </ReactMarkdown>
-
+                    {node.info}
+                </ReactMarkdown>
+            </div>
 
             {showRelationshipsForNode && relatedLinks.length > 0 ? (
                 <div className="mt-2">
@@ -283,8 +293,9 @@ export default function NetworkGraph({
     const nodeColor = useCallback((node: NodeObject) => {
         const typedNode = node as UIGraphNode;
         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId];
-        const index = uiGraphData.nodes.findIndex(n => n.id === typedNode.id);
-        return palette.colors[index % palette.colors.length];
+        const hash = djb2(typedNode.id);
+        
+        return palette.colors[hash % palette.colors.length];
     },
         [uiGraphData.settings.colorPaletteId]
     );
