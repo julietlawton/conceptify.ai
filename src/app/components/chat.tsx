@@ -202,7 +202,7 @@ export default function Chat() {
                     settings: {
                         colorPaletteId: ColorPalettes[0].id,
                         showNodeRelationships: newNodes.reduce((acc, node) => {
-                          acc[node.id] = true;
+                          acc[node.id] = false;
                           return acc;
                         }, {} as { [nodeId: string]: boolean }),
                     },
@@ -226,7 +226,7 @@ export default function Chat() {
                 const updatedShowNodeRelationships = { ...existingSettings.showNodeRelationships };
                 newNodes.forEach((node) => {
                     if (!(node.id in updatedShowNodeRelationships)) {
-                      updatedShowNodeRelationships[node.id] = true;
+                      updatedShowNodeRelationships[node.id] = false;
                     }
                 });
 

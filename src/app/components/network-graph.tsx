@@ -314,7 +314,7 @@ export default function NetworkGraph({
 
     const handleAddNode = () => {
         setDialogMode("add");
-        setNewNodeData({ name: "", info: "", showRelationships: true, edges: [] });
+        setNewNodeData({ name: "", info: "", showRelationships: false, edges: [] });
         setIsDialogOpen(true);
     }
 
