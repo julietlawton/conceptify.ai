@@ -6,7 +6,7 @@ import SideNav from "@/app/components/side-nav";
 import NetworkGraph from "./components/network-graph"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ViewColumnsIcon, Bars3Icon } from "@heroicons/react/24/solid";
+import { Bars3Icon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
 import { GraphIcon } from "./ui/icons";
 

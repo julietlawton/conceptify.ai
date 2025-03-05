@@ -25,7 +25,6 @@ export default function Chat() {
     const [localMessages, setLocalMessages] = useState<Message[]>([]);
     const [loadingMessageId, setLoadingMessageId] = useState<string | null>(null);
 
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
     // // Auto-scroll when messages update
