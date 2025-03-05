@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ViewColumnsIcon, Bars3Icon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
+import { GraphIcon } from "./ui/icons";
 
 export default function Home() {
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(false)
@@ -69,7 +70,7 @@ export default function Home() {
                     className="absolute top-12 left-2 z-10 text-gray-600"
                     onClick={() => setIsVisualizerOpen(!isVisualizerOpen)}
                   >
-                    <ViewColumnsIcon className="h-4 w-4" />
+                    <GraphIcon/>
                     <span className="sr-only">Toggle Visualizer</span>
                   </Button>
                 </TooltipTrigger>

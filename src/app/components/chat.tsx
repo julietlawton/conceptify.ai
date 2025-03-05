@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect} from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useChat, useCurrentGraph } from '../context/ChatContext';
 import { Message } from 'ai';
 import { getModelResponse, streamModelResponse } from '../lib/model';
@@ -26,6 +26,7 @@ export default function Chat() {
     const [loadingMessageId, setLoadingMessageId] = useState<string | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
     // // Auto-scroll when messages update
     // useLayoutEffect(() => {
@@ -35,7 +36,7 @@ export default function Chat() {
     useEffect(() => {
         // Whenever the conversation changes, reset localMessages to match it
         setLocalMessages(messages);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentConversationId]);
 
     // useEffect(() => {
@@ -99,6 +100,10 @@ export default function Chat() {
         setInput(""); // Clear input
         setIsLoading(true);
 
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = 0;
+        }
+
         let streamedContent = "";
 
         const assistantMessage: Message = {
@@ -130,7 +135,7 @@ export default function Chat() {
             const strippedGraph = existingGraph
                 ? {
                     nodes: existingGraph.nodes.map(node => node.name),
-                    
+
                     links: existingGraph.links.map(link => ({
                         source: existingGraph.nodes.find(n => n.id === link.source)?.name || "",
                         target: existingGraph.nodes.find(n => n.id === link.target)?.name || "",
@@ -138,7 +143,7 @@ export default function Chat() {
                     }))
                 }
                 : null;
-            
+
             console.log(existingGraph);
 
             console.log(strippedGraph);
@@ -196,14 +201,14 @@ export default function Chat() {
             // Merge the new graph with the current conversation's graph:
             let mergedGraph;
             if (!graphData || graphData.nodes.length === 0) {
-                mergedGraph = { 
-                    nodes: newNodes, 
+                mergedGraph = {
+                    nodes: newNodes,
                     links: newLinks,
                     settings: {
                         colorPaletteId: ColorPalettes[0].id,
                         showNodeRelationships: newNodes.reduce((acc, node) => {
-                          acc[node.id] = false;
-                          return acc;
+                            acc[node.id] = false;
+                            return acc;
                         }, {} as { [nodeId: string]: boolean }),
                     },
                 };
@@ -226,7 +231,7 @@ export default function Chat() {
                 const updatedShowNodeRelationships = { ...existingSettings.showNodeRelationships };
                 newNodes.forEach((node) => {
                     if (!(node.id in updatedShowNodeRelationships)) {
-                      updatedShowNodeRelationships[node.id] = false;
+                        updatedShowNodeRelationships[node.id] = false;
                     }
                 });
 
@@ -234,8 +239,8 @@ export default function Chat() {
                     nodes: mergedNodes,
                     links: mergedLinks,
                     settings: {
-                      colorPaletteId: existingSettings.colorPaletteId,
-                      showNodeRelationships: updatedShowNodeRelationships,
+                        colorPaletteId: existingSettings.colorPaletteId,
+                        showNodeRelationships: updatedShowNodeRelationships,
                     },
                 };
             }
@@ -269,7 +274,7 @@ export default function Chat() {
     return (
         <div className="flex flex-col flex-grow h-full bg-white overflow-x-hidden w-full">
             <div className="w-full max-w-5xl mx-auto flex flex-col flex-grow">
-                <div className="flex-grow w-full mx-auto pb-4 flex flex-col space-y-2 px-4 py-6">
+                <div ref={chatContainerRef} className="flex-grow w-full mx-auto pb-4 flex flex-col space-y-2 px-4 py-6 pb-12">
                     {localMessages.map((msg, index) => (
                         < ChatBubble
                             key={msg.id}
@@ -280,76 +285,12 @@ export default function Chat() {
                             loadingMessageId={loadingMessageId}
                         />
                     ))}
-                    <div ref={messagesEndRef} className="shrink-0 min-w-[24px] min-h-[24px]" />
+                    {/* <div ref={messagesEndRef} className="shrink-0 min-w-[24px] min-h-[24px]" /> */}
                 </div>
             </div>
-            <div className="sticky bottom-0 w-full bg-white">
-                <div className="max-w-5xl mx-auto mb-6 px-4">
-                    <ChatInput sendMessage={sendMessage} input={input} setInput={setInput} isLoading={isLoading} />
-                </div>
+            <div className="sticky-bottom w-full bg-white px-4 pb-4">
+                <ChatInput sendMessage={sendMessage} input={input} setInput={setInput} isLoading={isLoading} />
             </div>
         </div>
     );
-
-    // function ChatBubble(index: number, msg: Message) {
-    //     return (
-    //         <div
-    //             key={index}
-    //             className={`p-3 rounded-lg ${msg.role === "user"
-    //                 ? "max-w-xs md:max-w-md bg-gray-200 text-black self-end"
-    //                 : "text-gray-900"
-    //                 }`}
-    //         >
-    //             <div className="flex items-start gap-4">
-    //                 {/* Assistant Icon */}
-    //                 {msg.role === "assistant" && (
-    //                     <SparklesIcon className="size-8 p-2 ring-gray-300 flex items-center justify-center rounded-full ring-1 shrink-0" />
-    //                 )}
-
-    //                 {/* Message Content - User Text or Assistant Markdown */}
-    //                 <div className="space-y-4">
-    //                     {msg.role === "user" ? (
-    //                         <span>{msg.content}</span>
-    //                     ) : (
-    //                         <Markdown>{msg.content}</Markdown>
-    //                     )}
-
-    //                     {/* Button below assistant messages */}
-    //                     {msg.role === "assistant" && !isLoading && (
-    //                         <button className="mt-2 flex items-center gap-1 px-2 py-1 text-black border text-sm bg-white rounded-md hover:bg-gray-100">
-    //                             <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
-    //                             <span>Add to graph</span>
-    //                         </button>
-    //                     )}
-    //                 </div>
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
-
-    // function ChatBubble(index: number, msg: Message) {
-    //     return <div
-    //         key={index}
-    //         className={`p-3 rounded-lg ${msg.role === "user"
-    //             ? "max-w-xs md:max-w-md bg-gray-200 text-black self-end"
-    //             : "text-gray-900"}`}
-    //     >
-    //         <div className="flex items-start gap-4">
-    //             {/* Assistant Icon */}
-    //             {msg.role === "assistant" && (
-    //                 <SparklesIcon className="size-8 p-2 ring-gray-300 flex items-center justify-center rounded-full ring-1 shrink-0" />
-    //             )}
-
-    //             {/* Message Content - User Text or Assistant Markdown */}
-    //             {msg.role === "user" ? (
-    //                 <span>{msg.content}</span>
-    //             ) : (
-    //                 <div className="space-y-4">
-    //                     <Markdown>{msg.content}</Markdown>
-    //                 </div>
-    //             )}
-    //         </div>
-    //     </div>;
-    // }
 }

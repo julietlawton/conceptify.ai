@@ -48,7 +48,7 @@ export default function SideNav() {
                 </TooltipProvider>
             </div>
 
-            <div className="w-64 flex flex-col space-y-2 overflow-y-auto">
+            <div className="scrollbar-no-background w-64 flex flex-col space-y-2 overflow-y-auto">
                 {Object.keys(conversations).length > 0 ? (
                     Object.values(conversations)
                     .sort((a, b) => getLastMessageTime(b) - getLastMessageTime(a))

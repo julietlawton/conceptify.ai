@@ -294,7 +294,7 @@ export default function NetworkGraph({
         const typedNode = node as UIGraphNode;
         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId];
         const hash = djb2(typedNode.id);
-        
+
         return palette.colors[hash % palette.colors.length];
     },
         [uiGraphData.settings.colorPaletteId]
@@ -569,19 +569,13 @@ export default function NetworkGraph({
     };
 
     const handleSearchSelect = (node: UIGraphNode) => {
-        console.log("Zooming to", node);
-        console.log("Zooming to", node.id);
-        console.log(node.x, node.y);
         // Zoom to the node
         if (forceGraphRef.current && node) {
-          forceGraphRef.current.zoomToFit(500, 250, (n) => String(n.id) === String(node.id));
+          forceGraphRef.current.zoomToFit(500, 300, (n) => String(n.id) === String(node.id));
         }
     };
 
     const handleColorPaletteSelect = (palette: ColorPalette) => {
-        console.log("Selected palette:", palette.id);
-        console.log(currentConversationId)
-        console.log(uiGraphData.settings)
         if (currentConversationId && uiGraphData.settings) {
             // Create a new graph object with updated settings:
             const newGraph = {
@@ -591,9 +585,7 @@ export default function NetworkGraph({
                     colorPaletteId: palette.id,
                 },
             };
-            console.log("new graph", newGraph)
             const pureGraph = stripUIGraph(newGraph);
-            console.log("pure graph", pureGraph)
             updateConversationGraphData(currentConversationId, pureGraph);
         }
     };

@@ -228,7 +228,7 @@ export function GraphToolbar({
                         </Tooltip>
 
                         {isSearchOpen && (
-                            <div className="absolute top-full left-0 mt-2 w-64 bg-white border rounded shadow z-20">
+                            <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded shadow z-20">
                                 <Input
                                     ref={searchInputRef}
                                     type="text"
@@ -236,14 +236,14 @@ export function GraphToolbar({
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Search nodes..."
-                                    className="w-full border rounded px-2 py-1"
+                                    className="w-full rounded px-2 py-1"
                                 />
                                 {searchResults.length > 0 && (
                                     <div className="mt-1 max-h-72 overflow-y-auto">
                                         {searchResults.map((node, index) => (
                                             <div
                                                 key={node.id}
-                                                className={`${inter.className} px-2 py-1 cursor-pointer border-b last:border-0 ${index === highlightIndex ? "bg-gray-100" : "hover:bg-gray-100"
+                                                className={`${inter.className} px-2 py-1 text-gray-600 cursor-pointer border-b last:border-0 ${index === highlightIndex ? "bg-gray-100" : "hover:bg-gray-100"
                                                     }`}
                                                 onClick={() => handleSelectNode(node)}
                                             >

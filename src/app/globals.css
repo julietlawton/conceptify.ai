@@ -97,3 +97,9 @@
   display: list-item !important;
   margin-bottom: 0.25rem;
 }
+
+.sticky-bottom {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}

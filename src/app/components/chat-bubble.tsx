@@ -26,7 +26,7 @@ const components: Partial<Components> = {
     },
     ul: ({ children, ...props }) => {
         return (
-            <ul className="list-decimal list-outside ml-4" {...props}>
+            <ul className="list-disc list-outside ml-4" {...props}>
                 {children}
             </ul>
         );
@@ -115,7 +115,7 @@ export function ChatBubble({
         <div
             key={index}
             className={`p-3 rounded-lg ${msg.role === "user"
-                ? "max-w-xs md:max-w-md bg-gray-200 text-black self-end"
+                ? "max-w-xs md:max-w-md bg-gray-200 text-black self-end rounded-xl"
                 : "text-gray-900"
                 }`}
         >
@@ -147,7 +147,7 @@ export function ChatBubble({
 
                 {/* Show button only when message has fully streamed (isLoading is false) */}
                 {msg.role === "assistant" && !isLoading && (
-                    <button className={`mt-2 flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md 
+                    <button className={`mt-2 flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md
                             ${isButtonDisabled ? "cursor-not-allowed opacity-50" : "border hover:bg-gray-100"}`}
                         onClick={onAddToGraph}
                         disabled={isButtonDisabled}
