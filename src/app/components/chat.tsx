@@ -22,7 +22,9 @@ export default function Chat() {
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
     const [localMessages, setLocalMessages] = useState<Message[]>([]);
-    const [loadingMessageId, setLoadingMessageId] = useState<string | null>(null);
+
+    const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
+    const [addingToGraphMessageId, setAddingToGraphMessageId] = useState<string | null>(null);
 
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -110,6 +112,8 @@ export default function Chat() {
             createdAt: new Date(),
         };
 
+        setStreamingMessageId(assistantMessage.id);
+
         // Temporarily add assistant message to UI
         setLocalMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
@@ -122,6 +126,7 @@ export default function Chat() {
             );
         }
         addMessageToConversation({ ...assistantMessage, content: streamedContent });
+        setStreamingMessageId(null);
         setIsLoading(false);
     };
 
@@ -253,7 +258,7 @@ export default function Chat() {
     }
 
     const handleAddToGraph = async (msg: Message) => {
-        setLoadingMessageId(msg.id);
+        setAddingToGraphMessageId(msg.id);
 
         try {
             if (graphData) {
@@ -264,7 +269,7 @@ export default function Chat() {
         } catch (error) {
             console.error("Error adding to graph:", error);
         } finally {
-            setLoadingMessageId(null);
+            setAddingToGraphMessageId(null);
         }
     };
 
@@ -277,9 +282,9 @@ export default function Chat() {
                             key={msg.id}
                             index={index}
                             msg={msg}
-                            isLoading={isLoading}
                             onAddToGraph={() => handleAddToGraph(msg)}
-                            loadingMessageId={loadingMessageId}
+                            streamingMessageId={streamingMessageId}
+                            addingToGraphMessageId={addingToGraphMessageId}
                         />
                     ))}
                     {/* <div ref={messagesEndRef} className="shrink-0 min-w-[24px] min-h-[24px]" /> */}

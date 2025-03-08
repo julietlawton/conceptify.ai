@@ -98,18 +98,18 @@ const components: Partial<Components> = {
 export function ChatBubble({
     index,
     msg,
-    isLoading,
     onAddToGraph,
-    loadingMessageId
+    streamingMessageId,
+    addingToGraphMessageId,
 }: {
     index: number;
     msg: Message;
-    isLoading: boolean;
     onAddToGraph: () => Promise<void>;
-    loadingMessageId: string | null;
+    streamingMessageId: string | null;
+    addingToGraphMessageId: string | null;
 }) {
 
-    const isButtonDisabled = loadingMessageId !== null;
+    const isButtonDisabled = streamingMessageId !== null || addingToGraphMessageId != null;
 
     return (
         <div
@@ -126,7 +126,6 @@ export function ChatBubble({
                     </div>
                 )}
 
-                {/* Message Content */}
                 <div className="space-y-4">
                     {msg.role === "user" ? (
                         <span>{msg.content}</span>
@@ -145,25 +144,25 @@ export function ChatBubble({
                         )
                     )}
 
-                {/* Show button only when message has fully streamed (isLoading is false) */}
-                {msg.role === "assistant" && !isLoading && (
-                    <button className={`mt-2 flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md
-                            ${isButtonDisabled ? "cursor-not-allowed opacity-50" : "border hover:bg-gray-100"}`}
-                        onClick={onAddToGraph}
-                        disabled={isButtonDisabled}
-                    >
-                        {loadingMessageId === msg.id ? (  // Show spinner only on clicked button
-                            <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <>
-                                <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
-                                <span>Add to graph</span>
-                            </>
-                        )}
-                    </button>
-                )}
+                    {msg.role === "assistant" && streamingMessageId !== msg.id && (
+                        <button className={`mt-2 flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md
+                        ${isButtonDisabled ? "cursor-not-allowed opacity-50" : "border hover:bg-gray-100"}`}
+                            onClick={onAddToGraph}
+                            disabled={isButtonDisabled}
+                        >
+                            {addingToGraphMessageId === msg.id ? (  // Show spinner only on clicked button
+                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <>
+                                    <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
+                                    <span>Add to graph</span>
+                                </>
+                            )}
+                        </button>
+                    )}
+                    
+                </div>
             </div>
-        </div>
         </div >
     );
 }
