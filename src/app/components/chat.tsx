@@ -21,7 +21,6 @@ export default function Chat() {
 
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
-    const [input, setInput] = useState("");
     const [localMessages, setLocalMessages] = useState<Message[]>([]);
     const [loadingMessageId, setLoadingMessageId] = useState<string | null>(null);
 
@@ -73,13 +72,13 @@ export default function Chat() {
         }
     };
 
-    const sendMessage = async () => {
-        if (!input.trim()) return;
+    const sendMessage = async (text: string) => {
+        if (!text.trim()) return;
 
         const userMessage: Message = {
             id: uuidv4(),
             role: "user",
-            content: input,
+            content: text,
             createdAt: new Date(),
         };
 
@@ -96,7 +95,6 @@ export default function Chat() {
         addMessageToConversation(userMessage);
         setLocalMessages((prevMessages) => [...prevMessages, userMessage])
 
-        setInput(""); // Clear input
         setIsLoading(true);
 
         if (chatContainerRef.current) {
@@ -288,7 +286,8 @@ export default function Chat() {
                 </div>
             </div>
             <div className="sticky-bottom w-full bg-white px-4 pb-4">
-                <ChatInput sendMessage={sendMessage} input={input} setInput={setInput} isLoading={isLoading} />
+                {/* <ChatInput sendMessage={sendMessage} input={input} setInput={setInput} isLoading={isLoading} /> */}
+                <ChatInput sendMessage={sendMessage} isLoading={isLoading} />
             </div>
         </div>
     );
