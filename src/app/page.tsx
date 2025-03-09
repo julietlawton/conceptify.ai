@@ -6,11 +6,12 @@ import SideNav from "@/app/components/side-nav";
 import NetworkGraph from "./components/network-graph"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Bars3Icon } from "@heroicons/react/24/solid";
+import { Bars3Icon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
 import { GraphIcon } from "./ui/icons";
 
 export default function Home() {
+  const [isMobile, setIsMobile] = useState(false);
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(true)
   const [isSideNavOpen, setIsSideNavOpen] = useState(true)
   const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
@@ -35,6 +36,28 @@ export default function Home() {
     setIsGraphFullScreen(prev => !prev);
     // setTimeout(handleResize, 310);
   };
+
+  useEffect(() => {
+    const checkDevice = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const mobileDevices = ["android", "iphone"];
+      setIsMobile(mobileDevices.some(device => userAgent.includes(device)));
+    };
+
+    checkDevice();
+    window.addEventListener("resize", checkDevice);
+
+    return () => window.removeEventListener("resize", checkDevice);
+  }, []);
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 h-screen text-center bg-gray-500 text-white font-bold mt-[-50px]">
+        <ExclamationCircleIcon className="w-14 h-14 text-white mb-4" />
+        <p className="text-xl">Hey there! This app was designed for bigger screens - come back on a desktop or tablet.</p>
+      </div>
+    );
+  }
 
 
   return (
@@ -70,7 +93,7 @@ export default function Home() {
                     className="absolute top-12 left-2 z-10 text-gray-600"
                     onClick={() => setIsVisualizerOpen(!isVisualizerOpen)}
                   >
-                    <GraphIcon/>
+                    <GraphIcon />
                     <span className="sr-only">Toggle Visualizer</span>
                   </Button>
                 </TooltipTrigger>
@@ -86,11 +109,11 @@ export default function Home() {
           ${isGraphFullScreen ? "fixed inset-0 bg-white z-50" : isVisualizerOpen ? "w-1/2 opacity-100" : "w-0 opacity-0"}`}
       >
         {isVisualizerOpen && graphData ? (
-            <NetworkGraph
-              isFullScreen={isGraphFullScreen}
-              isGraphVisible={graphVisible}
-              onToggleFullScreen={toggleFullScreen}
-            />
+          <NetworkGraph
+            isFullScreen={isGraphFullScreen}
+            isGraphVisible={graphVisible}
+            onToggleFullScreen={toggleFullScreen}
+          />
         ) : (
           isVisualizerOpen && (
             <div
