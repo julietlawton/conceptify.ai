@@ -11,7 +11,7 @@ import { useChat } from "./context/ChatContext";
 import { GraphIcon } from "./ui/icons";
 
 export default function Home() {
-  const [isVisualizerOpen, setIsVisualizerOpen] = useState(false)
+  const [isVisualizerOpen, setIsVisualizerOpen] = useState(true)
   const [isSideNavOpen, setIsSideNavOpen] = useState(true)
   const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
   const { currentConversationId, conversations, coldStartGraph } = useChat();

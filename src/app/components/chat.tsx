@@ -28,22 +28,18 @@ export default function Chat() {
 
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
-    // // Auto-scroll when messages update
-    // useLayoutEffect(() => {
-    //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    // }, [messages]);
-
     useEffect(() => {
         // Whenever the conversation changes, reset localMessages to match it
         setLocalMessages(messages);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentConversationId]);
 
-    // useEffect(() => {
-    //     if (currentConversationId && conversations[currentConversationId]) {
-    //       setLocalMessages(conversations[currentConversationId].messages);
-    //     }
-    //   }, [currentConversationId, conversations]);
+    useEffect(() => {
+        // Whenever messages changes, scroll to bottom
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages]);
 
     const generateChatTitle = async (message: string) => {
         const introMessages: Message[] = [
@@ -274,9 +270,12 @@ export default function Chat() {
     };
 
     return (
-        <div className="flex flex-col flex-grow h-full bg-white overflow-x-hidden w-full">
-            <div className="w-full max-w-5xl mx-auto flex flex-col flex-grow">
-                <div ref={chatContainerRef} className="flex-grow w-full mx-auto pb-4 flex flex-col space-y-2 px-4 py-6 pb-12">
+        <div className="flex flex-col h-full">
+            <div
+                ref={chatContainerRef}
+                className={`flex-1 min-h-0 w-full overflow-y-auto ${streamingMessageId ? "pb-[50vh]" : "pb-12"}`
+                }>
+                <div className="max-w-5xl mx-auto flex flex-col space-y-2 px-4 py-6">
                     {localMessages.map((msg, index) => (
                         < ChatBubble
                             key={msg.id}
@@ -287,11 +286,10 @@ export default function Chat() {
                             addingToGraphMessageId={addingToGraphMessageId}
                         />
                     ))}
-                    {/* <div ref={messagesEndRef} className="shrink-0 min-w-[24px] min-h-[24px]" /> */}
                 </div>
             </div>
-            <div className="sticky-bottom w-full bg-white px-4 pb-4">
-                {/* <ChatInput sendMessage={sendMessage} input={input} setInput={setInput} isLoading={isLoading} /> */}
+
+            <div className="px-4 pb-4 bg-white mr-16">
                 <ChatInput sendMessage={sendMessage} isLoading={isLoading} />
             </div>
         </div>

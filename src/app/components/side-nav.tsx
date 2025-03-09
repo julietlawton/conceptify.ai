@@ -30,7 +30,7 @@ export default function SideNav() {
     };
 
     return (
-        <div className="w-64 min-64 flex h-full flex-col bg-gray-100">
+        <div className="w-72 min-64 flex h-full flex-col bg-gray-100">
             <div className="flex items-center justify-between px-4 py-5">
                 <h2 className="text-lg font-bold">Chats</h2>
                 <TooltipProvider>
@@ -48,7 +48,7 @@ export default function SideNav() {
                 </TooltipProvider>
             </div>
 
-            <div className="scrollbar-no-background w-64 flex flex-col space-y-2 overflow-y-auto">
+            <div className="w-72 flex flex-col space-y-2 overflow-y-auto">
                 {Object.keys(conversations).length > 0 ? (
                     Object.values(conversations)
                     .sort((a, b) => getLastMessageTime(b) - getLastMessageTime(a))
