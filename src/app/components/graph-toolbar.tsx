@@ -334,7 +334,7 @@ export function GraphToolbar({
                     </DialogHeader>
                     <div className="p-4">
                         <p className="text-md text-black">
-                            Are you sure you want to delete this graph? This action can't be undone.
+                            Are you sure you want to delete this graph? This action can&apos;t be undone.
                         </p>
                     </div>
                     <DialogFooter className="flex justify-end space-x-2">
