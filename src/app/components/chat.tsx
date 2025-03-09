@@ -289,7 +289,7 @@ export default function Chat() {
                 </div>
             </div>
 
-            <div className="px-4 pb-4 bg-white mr-16">
+            <div className="px-4 pb-4 bg-white">
                 <ChatInput sendMessage={sendMessage} isLoading={isLoading} />
             </div>
         </div>

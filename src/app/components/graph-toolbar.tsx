@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
     PlusIcon,
     PencilIcon,
@@ -34,21 +35,21 @@ interface GraphToolbarProps {
 function useOnClickOutside<T extends HTMLElement>(
     ref: RefObject<T>,
     handler: (event: MouseEvent | TouchEvent) => void
-  ) {
+) {
     useEffect(() => {
-      const listener = (event: MouseEvent | TouchEvent) => {
-        if (!ref.current || ref.current.contains(event.target as Node)) {
-          return;
-        }
-        handler(event);
-      };
+        const listener = (event: MouseEvent | TouchEvent) => {
+            if (!ref.current || ref.current.contains(event.target as Node)) {
+                return;
+            }
+            handler(event);
+        };
 
-      document.addEventListener("mousedown", listener, true);
-      document.addEventListener("touchstart", listener, true);
-      return () => {
-        document.removeEventListener("mousedown", listener, true);
-        document.removeEventListener("touchstart", listener, true);
-      };
+        document.addEventListener("mousedown", listener, true);
+        document.addEventListener("touchstart", listener, true);
+        return () => {
+            document.removeEventListener("mousedown", listener, true);
+            document.removeEventListener("touchstart", listener, true);
+        };
     }, [ref, handler]);
 }
 
@@ -75,6 +76,8 @@ export function GraphToolbar({
     const [isColorPalettePickerOpen, setIsColorPalettePickerOpen] = useState(false);
     const [selectedPalette, setSelectedPalette] = useState<ColorPalette>(currentColorPalette);
     const colorPaletteInputRef = useRef<HTMLInputElement>(null);
+
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     useOnClickOutside(containerRef as React.RefObject<HTMLDivElement>, () => {
         setIsSearchOpen(false);
@@ -149,7 +152,7 @@ export function GraphToolbar({
                 <div className="flex items-center space-x-2">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button onClick={onAddNode} variant="outline" size="icon" className="text-gray-600">
+                            <Button onClick={onAddNode} variant="outline" size="icon" className="black">
                                 <PlusIcon className="h-4 w-4" />
                                 <span className="sr-only">Add Node</span>
                             </Button>
@@ -213,7 +216,7 @@ export function GraphToolbar({
                                 <Button
                                     onClick={() => {
                                         setIsSearchOpen((prev) => !prev);
-                                        if(isColorPalettePickerOpen){
+                                        if (isColorPalettePickerOpen) {
                                             setIsColorPalettePickerOpen(false);
                                         }
                                     }}
@@ -262,7 +265,7 @@ export function GraphToolbar({
                                 <Button
                                     onClick={() => {
                                         setIsColorPalettePickerOpen((prev) => !prev);
-                                        if(isSearchOpen){
+                                        if (isSearchOpen) {
                                             setIsSearchOpen(false);
                                         }
                                     }}
@@ -307,17 +310,46 @@ export function GraphToolbar({
                         <Input type="text" value={selectedNode.name} readOnly className="ml-2 w-40" placeholder="Selected Node" />
                     )}
                 </div>
+
+
+                <div className="flex items-center">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={() => setIsDialogOpen(true)} variant="outline" size="icon" className="text-white bg-red-600 hover:bg-red-400 hover:text-white">
+                                <TrashIcon className="h-4 w-4" />
+                                <span className="sr-only">Delete Graph</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Delete Graph
+                        </TooltipContent>
+                    </Tooltip>
+
+                </div>
             </TooltipProvider >
-
-            <div className="flex items-center">
-                <button
-                    className="flex items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
-                    onClick={onDeleteGraph}
-                >
-                    <span>Delete graph</span>
-                </button>
-
-            </div>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Graph</DialogTitle>
+                    </DialogHeader>
+                    <div className="p-4">
+                        <p className="text-md text-black">
+                            Are you sure you want to delete this graph? This action can't be undone.
+                        </p>
+                    </div>
+                    <DialogFooter className="flex justify-end space-x-2">
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                setIsDialogOpen(false);
+                                onDeleteGraph(); 
+                            }}
+                        >
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
         </div >
     )
