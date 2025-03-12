@@ -311,7 +311,7 @@ export default function Chat() {
                 onScroll={handleScroll}
                 className={`flex-1 min-h-0 w-full overflow-y-auto ${streamingMessageId ? "pb-[50vh]" : "pb-12"}`
                 }>
-                <div className={`max-w-5xl mx-auto flex flex-col space-y-2 pl-8 py-6 ${hasScrollbar ? "pr-8" : "pr-12"}`}>
+                <div className={`max-w-5xl mx-auto flex flex-col space-y-2 pl-8 py-6 ${hasScrollbar ? "pr-11" : "pr-14"}`}>
                     {localMessages.map((msg, index) => (
                         < ChatBubble
                             key={msg.id}
