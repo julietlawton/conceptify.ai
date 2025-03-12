@@ -7,6 +7,8 @@ import { ChatBubble } from './chat-bubble';
 import { GraphLink, GraphNode, KnowledgeGraph } from '../lib/types';
 import { ColorPalettes } from '../ui/color-palettes';
 import { v4 as uuidv4 } from 'uuid';
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 export default function Chat() {
     const {
@@ -27,6 +29,22 @@ export default function Chat() {
     const [addingToGraphMessageId, setAddingToGraphMessageId] = useState<string | null>(null);
 
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
+
+    const [hasScrollbar, setHasScrollbar] = useState(false);
+    const [isAtBottom, setIsAtBottom] = useState(false);
+
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            setHasScrollbar(chatContainerRef.current.scrollHeight > chatContainerRef.current.clientHeight);
+        }
+    }, [localMessages]);
+
+    useEffect(() => {
+        if (chatContainerRef.current && isAtBottom) {
+            chatContainerRef.current.scrollTop =
+                chatContainerRef.current.scrollHeight;
+        }
+    }, [localMessages, isAtBottom]);
 
     useEffect(() => {
         // Whenever the conversation changes, reset localMessages to match it
@@ -269,13 +287,31 @@ export default function Chat() {
         }
     };
 
+    const scrollToBottom = () => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    };
+
+    const handleScroll = () => {
+        if (!chatContainerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+        const threshold = 50;
+        const atBottom = scrollHeight - (scrollTop + clientHeight) <= threshold;
+        setIsAtBottom(atBottom);
+    };
+
     return (
         <div className="flex flex-col h-full">
             <div
                 ref={chatContainerRef}
+                onScroll={handleScroll}
                 className={`flex-1 min-h-0 w-full overflow-y-auto ${streamingMessageId ? "pb-[50vh]" : "pb-12"}`
                 }>
-                <div className="max-w-5xl mx-auto flex flex-col space-y-2 px-4 py-6">
+                <div className={`max-w-5xl mx-auto flex flex-col space-y-2 pl-8 py-6 ${hasScrollbar ? "pr-8" : "pr-12"}`}>
                     {localMessages.map((msg, index) => (
                         < ChatBubble
                             key={msg.id}
@@ -289,8 +325,28 @@ export default function Chat() {
                 </div>
             </div>
 
-            <div className="px-4 pb-4 bg-white">
-                <ChatInput sendMessage={sendMessage} isLoading={isLoading} />
+            <div className="relative">
+                {!isAtBottom && (
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={scrollToBottom}
+                                        className="bg-white size-8 p-1 ring-gray-300 flex items-center justify-center rounded-full ring-1 shadow-md shrink-0 hover:bg-gray-100"
+                                    >
+                                        <ChevronDownIcon className="w-5 h-5 text-gray-600" />
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent>Scroll To Bottom</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                    </div>
+                )}
+                <div className="px-4 pb-4 bg-white">
+                    <ChatInput sendMessage={sendMessage} isLoading={isLoading} />
+                </div>
             </div>
         </div>
     );

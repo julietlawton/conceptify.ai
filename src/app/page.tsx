@@ -90,7 +90,7 @@ export default function Home() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="absolute top-12 left-2 z-10 text-gray-600"
+                    className="absolute top-2 right-2 z-10 text-gray-600"
                     onClick={() => setIsVisualizerOpen(!isVisualizerOpen)}
                   >
                     <GraphIcon />
