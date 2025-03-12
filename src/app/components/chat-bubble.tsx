@@ -8,6 +8,9 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import rehypeHighlight from "rehype-highlight";
 import { CognitionIcon } from "../ui/icons";
+import { CheckIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { useState } from "react";
 
 const components: Partial<Components> = {
     ol: ({ children, ...props }) => {
@@ -110,6 +113,7 @@ export function ChatBubble({
 }) {
 
     const isButtonDisabled = streamingMessageId !== null || addingToGraphMessageId != null;
+    const [copiedMessageId, setCopiedMessageId] = useState("");
 
     return (
         <div
@@ -145,22 +149,50 @@ export function ChatBubble({
                     )}
 
                     {msg.role === "assistant" && streamingMessageId !== msg.id && (
-                        <button className={`mt-2 flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md
-                        ${isButtonDisabled ? "cursor-not-allowed opacity-50" : "border hover:bg-gray-100"}`}
-                            onClick={onAddToGraph}
-                            disabled={isButtonDisabled}
-                        >
-                            {addingToGraphMessageId === msg.id ? (  // Show spinner only on clicked button
-                                <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                            ) : (
-                                <>
-                                    <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
-                                    <span>Add to graph</span>
-                                </>
-                            )}
-                        </button>
+                        <div className="flex space-x-2 mt-2">
+                            <button
+                                className={`flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md
+                ${isButtonDisabled ? "cursor-not-allowed opacity-50" : "border hover:bg-gray-100"}`}
+                                onClick={onAddToGraph}
+                                disabled={isButtonDisabled}
+                            >
+                                {addingToGraphMessageId === msg.id ? (  // Show spinner only on clicked button
+                                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
+                                        <span>Add to graph</span>
+                                    </>
+                                )}
+                            </button>
+
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            className={`flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md border hover:bg-gray-100`}
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(msg.content);
+                                                setCopiedMessageId(msg.id);
+                                                setTimeout(() => setCopiedMessageId(""), 2000);
+                                            }}
+                                        >
+                                            {copiedMessageId === msg.id ? (
+                                                <>
+                                                    <CheckIcon className="w-4 h-4" />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <ClipboardDocumentIcon className="w-4 h-4" />
+                                                </>
+                                            )}
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom">Copy</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
                     )}
-                    
                 </div>
             </div>
         </div >

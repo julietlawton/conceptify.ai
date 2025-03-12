@@ -40,13 +40,6 @@ export default function Chat() {
     }, [localMessages]);
 
     useEffect(() => {
-        if (chatContainerRef.current && isAtBottom) {
-            chatContainerRef.current.scrollTop =
-                chatContainerRef.current.scrollHeight;
-        }
-    }, [localMessages, isAtBottom]);
-
-    useEffect(() => {
         // Whenever the conversation changes, reset localMessages to match it
         setLocalMessages(messages);
         // eslint-disable-next-line react-hooks/exhaustive-deps
