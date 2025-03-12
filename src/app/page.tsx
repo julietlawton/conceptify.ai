@@ -123,12 +123,12 @@ export default function Home() {
               }}
             >
               <div className="flex flex-col items-center text-center space-y-4">
-                <p className="text-black text-lg">
+                <p className="text-gray-500 text-lg">
                   Nothing here yet. Add a message to get started
                 </p>
-                <p className="text-black text-lg">or</p>
+                <p className="text-gray-500 text-lg">or</p>
                 <button
-                  className="px-4 py-2 text-sm text-white bg-black rounded-md hover:bg-gray-500"
+                  className="px-4 py-2 text-sm text-white bg-gray-500 rounded-md hover:bg-black"
                   onClick={() => {
                     if (currentConversationId) {
                       coldStartGraph(currentConversationId);

@@ -633,7 +633,7 @@ export default function NetworkGraph({
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.name;
                         const fontSize = 14 / globalScale;
-                        ctx.font = `${fontSize}px ${inter.style.fontFamily}`;
+                        ctx.font = `600 ${fontSize}px ${inter.style.fontFamily}`;
 
                         // Maximum width allowed for a line (adjust as needed)
                         const maxWidth = 100 / globalScale;

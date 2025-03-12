@@ -114,24 +114,6 @@ export const ColorPalettes: ColorPalette[] = [
         linkHighlight: " #FFA500",
         textColor: "white"
     },
-    // {
-    //     id: "neon",
-    //     name: "Neon",
-    //     colors: [
-    //         " #deff0a",
-    //         ' #afff00',
-    //         ' #08ff00',
-    //         ' #00ff9f',
-    //         " #0aefff",
-    //         ' #00b7ff',
-    //         ' #9700ff',
-    //         ' #ff00bf',
-    //         " #ff5c00",
-    //         ' #ff0018'],
-    //     nodeHighlight: " #f6ff00",
-    //     linkHighlight: " #FFA500",
-    //     textColor: "black"
-    // },
     {
         id: "popart",
         name: "Pop Art",
@@ -170,25 +152,6 @@ export const ColorPalettes: ColorPalette[] = [
         linkHighlight: " #FFA500",
         textColor: "white"
     },
-    // {
-    //     id: "coralreef",
-    //     name: "Coral Reef",
-    //     colors: [
-    //         " #f9a79b",
-    //         " #f6c9c9",
-    //         " #fbcab9",
-    //         " #f2abf6",
-    //         " #d291df",
-    //         " #d9eedb",
-    //         " #96cbdf",
-    //         " #9ce5de",
-    //         " #05aba9",
-    //         " #5527ea"
-    //     ],
-    //     nodeHighlight: " #f6ff00",
-    //     linkHighlight: " #FFA500",
-    //     textColor: "white"
-    // },
     {
         id: "teahouse",
         name: "Tea House",

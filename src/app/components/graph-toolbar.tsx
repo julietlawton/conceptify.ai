@@ -286,7 +286,7 @@ export function GraphToolbar({
                                         ref={colorPaletteInputRef}
                                         key={palette.id}
                                         onClick={() => handlePaletteSelect(palette)}
-                                        className={` ${inter.className} px-2 py-1 cursor-pointer border-b last:border-0 hover:bg-gray-100 flex items-center ${selectedPalette.id === palette.id ? "bg-gray-100" : ""
+                                        className={` ${inter.className} text-gray-600 px-2 py-1 cursor-pointer border-b last:border-0 hover:bg-gray-100 flex items-center ${selectedPalette.id === palette.id ? "bg-gray-100" : ""
                                             }`}
                                     >
                                         <span className="flex-grow">{palette.name}</span>
@@ -313,19 +313,14 @@ export function GraphToolbar({
 
 
                 <div className="flex items-center">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button onClick={() => setIsDialogOpen(true)} variant="outline" size="icon" className="text-white bg-red-600 hover:bg-red-400 hover:text-white">
-                                <TrashIcon className="h-4 w-4" />
-                                <span className="sr-only">Delete Graph</span>
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            Delete Graph
-                        </TooltipContent>
-                    </Tooltip>
-
-                </div>
+                 <button
+                     className="flex items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
+                     onClick={() => setIsDialogOpen(true)}
+                 >
+                     <span>Delete graph</span>
+                 </button>
+ 
+             </div>
             </TooltipProvider >
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
