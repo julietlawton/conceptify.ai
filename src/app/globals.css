@@ -1,5 +1,4 @@
 @import 'highlight.js/styles/atom-one-light.css';
-@import 'simplebar-react/dist/simplebar.min.css';
 
 @tailwind base;
 @tailwind components;
