@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ChatProvider } from "./context/ChatContext";
+import { Toaster } from "react-hot-toast";
 import { Analytics } from '@vercel/analytics/next';
 
 const geistSans = Geist({
@@ -28,25 +29,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ChatProvider>
           {children}
         </ChatProvider>
+        <Toaster position="top-center" />
         <Analytics />
       </body>
     </html>
   );
 }
-
-
-// import '@/app/ui/global.css';
-// import { inter } from '@/app/ui/fonts';
- 
-// export default function RootLayout({
-//   children,
-// }: {
-//   children: React.ReactNode;
-// }) {
-//   return (
-//     <html lang="en">
-//       <body className={`${inter.className} antialiased`}>{children}</body>
-//       {/* <body >{children}</body> */}
-//     </html>
-//   );
-// }
