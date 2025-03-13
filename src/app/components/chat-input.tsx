@@ -1,12 +1,13 @@
 import React, { useRef, useState } from "react";
-import { ArrowUpIcon } from "@heroicons/react/24/solid";
+import { ArrowUpIcon, StopIcon } from "@heroicons/react/24/solid";
 
 interface ChatInputProps {
     sendMessage: (text: string) => void;
     isLoading: boolean;
+    handleStopGeneration: () => void;
 }
 
-function ChatInput({ sendMessage, isLoading }: ChatInputProps) {
+function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [inputValue, setInputValue] = useState("");
 
@@ -67,14 +68,23 @@ function ChatInput({ sendMessage, isLoading }: ChatInputProps) {
                 onKeyDown={handleKeyDown}
             />
             <div className="px-2">
-                <button
-                    className={`rounded-full p-1.5 h-fit transition 
-            ${!isLoading && inputValue.trim() ? "bg-black text-white hover:bg-gray-600" : "bg-gray-300 text-gray-400"}`}
-                    disabled={isLoading || !inputValue.trim()}
-                    onClick={handleClick}
-                >
-                    <ArrowUpIcon className="w-6 h-6" />
-                </button>
+                {isLoading ? (
+                    <button
+                        className="rounded-full p-1.5 h-fit transition bg-black text-white hover:bg-gray-600"
+                        onClick={handleStopGeneration}
+                    >
+                        <StopIcon className="w-6 h-6" />
+                    </button>
+                ) : (
+                    <button
+                        className={`rounded-full p-1.5 h-fit transition 
+            ${inputValue.trim() ? "bg-black text-white hover:bg-gray-600" : "bg-gray-300 text-gray-400"}`}
+                        disabled={!inputValue.trim()}
+                        onClick={handleClick}
+                    >
+                        <ArrowUpIcon className="w-6 h-6" />
+                    </button>
+                )}
             </div>
         </div>
     );

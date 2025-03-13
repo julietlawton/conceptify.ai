@@ -27,6 +27,7 @@ export default function Chat() {
 
     const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
     const [addingToGraphMessageId, setAddingToGraphMessageId] = useState<string | null>(null);
+    const stoppedRef = useRef(false);
 
     const chatContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -105,6 +106,7 @@ export default function Chat() {
         setLocalMessages((prevMessages) => [...prevMessages, userMessage])
 
         setIsLoading(true);
+        stoppedRef.current = false;
 
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = 0;
@@ -125,13 +127,21 @@ export default function Chat() {
         setLocalMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
         for await (const chunk of await streamModelResponse([...messages, userMessage])) {
+            if (stoppedRef.current) { 
+                break;
+            }
+        
             streamedContent += chunk;
-            setLocalMessages((prev) =>
-                prev.map((msg) =>
+            setLocalMessages((prev) => {
+                if (stoppedRef.current) {
+                    return prev;
+                }
+                return prev.map((msg) =>
                     msg.id === assistantMessage.id ? { ...msg, content: streamedContent } : msg
-                )
-            );
+                );
+            });
         }
+
         addMessageToConversation({ ...assistantMessage, content: streamedContent });
         setStreamingMessageId(null);
         setIsLoading(false);
@@ -297,6 +307,10 @@ export default function Chat() {
         setIsAtBottom(atBottom);
     };
 
+    const handleSetStopped = () => {
+        stoppedRef.current = true;
+    };
+
     return (
         <div className="flex flex-col h-full">
             <div
@@ -338,7 +352,7 @@ export default function Chat() {
                     </div>
                 )}
                 <div className="px-4 pb-4 bg-white">
-                    <ChatInput sendMessage={sendMessage} isLoading={isLoading} />
+                    <ChatInput sendMessage={sendMessage} isLoading={isLoading} handleStopGeneration={handleSetStopped} />
                 </div>
             </div>
         </div>
