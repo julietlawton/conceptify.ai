@@ -76,7 +76,10 @@ export default function Home() {
                     variant="outline"
                     size="icon"
                     className="absolute top-2 left-2 z-10 text-gray-600"
-                    onClick={() => setIsSideNavOpen(!isSideNavOpen)}
+                    onClick={() => {
+                      setIsSideNavOpen(!isSideNavOpen);
+                      setTimeout(() => window.dispatchEvent(new Event("resize")), 100);
+                    }}
                   >
                     <Bars3Icon className="h-4 w-4" />
                     <span className="sr-only">Toggle Sidebar</span>

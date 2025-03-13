@@ -38,7 +38,7 @@ import {
     ColorPalette
 } from "../lib/types";
 import { inter } from "../ui/fonts";
-import { colorPaletteById} from "../ui/color-palettes";
+import { colorPaletteById } from "../ui/color-palettes";
 
 interface NewNodeData {
     name: string;
@@ -182,6 +182,34 @@ export default function NetworkGraph({
     const [newNodeData, setNewNodeData] = useState<NewNodeData>({ name: "", info: "", showRelationships: false, edges: [] })
     const graphRef = useRef<HTMLDivElement | null>(null);
     const forceGraphRef = useRef<ForceGraphMethods | undefined>(undefined);
+    const [typedLetter, setTypedLetter] = useState<string>("");
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+        const char = event.key.toLowerCase();
+        if (char.length === 1 && char.match(/[a-z]/i)) {
+            setTypedLetter(char);
+        }
+    };
+
+    useEffect(() => {
+        if (typedLetter) {
+            const matchedNode = graphData.nodes
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .find((node) => node.name.toLowerCase().startsWith(typedLetter));
+
+            if (matchedNode) {
+                setNewNodeData((prev) => ({
+                    ...prev,
+                    edges: prev.edges.map((edge, index) =>
+                        index === prev.edges.length - 1 ? { ...edge, nodeId: matchedNode.id } : edge
+                    )
+                }));
+            }
+
+            const timeout = setTimeout(() => setTypedLetter(""), 1000);
+            return () => clearTimeout(timeout);
+        }
+    }, [typedLetter, graphData.nodes]);
 
     const updateDimensions = useCallback(() => {
         if (graphRef.current) {
@@ -571,7 +599,7 @@ export default function NetworkGraph({
     const handleSearchSelect = (node: UIGraphNode) => {
         // Zoom to the node
         if (forceGraphRef.current && node) {
-          forceGraphRef.current.zoomToFit(500, 300, (n) => String(n.id) === String(node.id));
+            forceGraphRef.current.zoomToFit(500, 300, (n) => String(n.id) === String(node.id));
         }
     };
 
@@ -628,7 +656,7 @@ export default function NetworkGraph({
                             force("charge").strength(-500);
                             force("center").strength(0.05);
                         }
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } as any)}
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         const label = node.name;
@@ -721,15 +749,22 @@ export default function NetworkGraph({
                         <DialogTitle>{dialogMode === "add" ? "Add New Node" : "Edit Node"}</DialogTitle>
                         <DialogDescription>
                             {dialogMode === "add"
-                                ? "Create a new node in the network graph."
+                                ? "Create a new node in the graph."
                                 : "Edit the selected node."}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4 px-2">
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">
-                                Name
-                            </Label>
+                            <div className="flex items-center justify-end gap-1">
+                                <Label htmlFor="name" className="whitespace-nowrap">Name</Label>
+
+                                <div className="relative group">
+                                    <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 -translate-y-1/4" />
+                                    <div className="absolute w-[200px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
+                                        <p>The name of this concept.</p>
+                                    </div>
+                                </div>
+                            </div>
                             <Input
                                 id="name"
                                 value={newNodeData.name}
@@ -743,8 +778,8 @@ export default function NetworkGraph({
                                 <Label htmlFor="info" className="whitespace-nowrap">Info</Label>
                                 <div className="relative group">
                                     <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-1 -translate-y-1/4" />
-                                    <div className="absolute left-1/2 -top-[140px] w-[250px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
-                                        <p>Supports:</p>
+                                    <div className="absolute w-[250px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
+                                        <p>The description of this concept. Supports:</p>
                                         <ul className="mt-1 list-disc list-inside">
                                             <li>Markdown (e.g., <strong>bold</strong>, <em>italic</em>)</li><br></br>
                                             <li>LaTeX (e.g., $(1+x)^2$)</li><br></br>
@@ -765,17 +800,37 @@ export default function NetworkGraph({
                         </div>
 
                         <div className="grid grid-cols-4 items-start gap-4">
-                            <Label className="text-right">Edges</Label>
+                            <div className="flex items-center justify-end gap-1">
+                                <Label htmlFor="name" className="whitespace-nowrap">Edges</Label>
+
+                                <div className="relative group">
+                                    <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 -translate-y-1/4" />
+                                    <div className="absolute -top-[50px] w-[320px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
+                                        <p>Edges are connections between concepts.</p>
+                                        <ul className="mt-1 list-disc list-inside">
+                                            <li><strong>Select Node</strong>: A node this concept is related to.</li>
+                                            <li><strong>Edge Label</strong>: Defines the relation between these concepts.</li>
+                                            <li><strong>Source vs. Target</strong>: Defines the direction of the relationship.</li>
+                                            <ul className="ml-4 list-disc list-inside">
+                                                <li><strong>Source</strong>: The broader or more general concept.</li>
+                                                <li><strong>Target</strong>: The specific concept being classified or described.</li>
+                                                <li>Example: <strong>Fruit</strong> (source) <em>is a type of</em> <strong>Apple</strong> (target).</li>
+                                            </ul>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                             <div className="col-span-3 space-y-4">
                                 {newNodeData.edges.map((edge, index) => (
                                     <div key={index} className="flex flex-wrap items-center gap-2">
                                         <Select value={edge.nodeId} onValueChange={(value) => handleEdgeChange(index, "nodeId", value)}>
-                                            <SelectTrigger className="w-[200px]">
+                                            <SelectTrigger className="w-[200px]" onKeyDown={handleKeyDown}>
                                                 <SelectValue placeholder="Select node" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {graphData.nodes
-                                                    .filter((node) => node.id !== selectedNode?.id)
+                                                    .filter((node) => dialogMode === "edit" ? node.id !== selectedNode?.id : true)
+                                                    .sort((a, b) => a.name.localeCompare(b.name))
                                                     .map((node) => (
                                                         <SelectItem key={node.id} value={node.id}>
                                                             {node.name}
@@ -812,9 +867,19 @@ export default function NetworkGraph({
                             </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="showRelationships" className="text-right">
-                                Show Relationships
-                            </Label>
+                            <div className="flex items-center justify-end gap-1">
+                                <Label htmlFor="showRelationships" className="text-right">
+                                    Show Edges
+                                </Label>
+
+                                <div className="relative group">
+                                    <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 -translate-y-1/4" />
+                                    <div className="absolute w-[200px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
+                                        <p>Toggles displaying the edges for this node on the hover card.</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="col-span-3">
                                 <input
                                     type="checkbox"
@@ -823,7 +888,7 @@ export default function NetworkGraph({
                                     onChange={(e) =>
                                         setNewNodeData((prev) => ({ ...prev, showRelationships: e.target.checked }))
                                     }
-                                    className="h-5 w-5 accent-black"
+                                    className="h-5 w-5 accent-black align-middle mt-[1px]"
                                 />
                             </div>
                         </div>
@@ -833,6 +898,17 @@ export default function NetworkGraph({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-gray-600 italic px-4 py-2 rounded text-sm w-[70%] w-auto text-center">
+                LLMs can {" "}
+                <a
+                    href="https://www.lakera.ai/blog/guide-to-hallucinations-in-large-language-models"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-blue-600"
+                >
+                    hallucinate
+                </a>. Remember to fact check generated content.
+            </div>
         </div>
     )
 }

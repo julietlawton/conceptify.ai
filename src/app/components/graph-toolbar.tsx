@@ -88,6 +88,10 @@ export function GraphToolbar({
         setHighlightIndex(0);
     }, [searchTerm]);
 
+    useEffect(() => {
+        setSelectedPalette(currentColorPalette);
+    }, [currentColorPalette]);
+
     const searchResults = useMemo(() => {
         if (!searchTerm.trim()) return [];
         return nodes.filter((node) =>
