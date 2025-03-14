@@ -9,12 +9,15 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/comp
 import { Bars3Icon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
 import { GraphIcon } from "./ui/icons";
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import FeedbackDialog from "./components/feedback-dialog";
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(true)
   const [isSideNavOpen, setIsSideNavOpen] = useState(true)
   const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
+  const [isSendFeedbackOpen, setIsSendFeedbackOpen] = useState(false)
   const { currentConversationId, conversations, coldStartGraph } = useChat();
 
   const graphData = currentConversationId ? conversations[currentConversationId]?.graphData || null : null;
@@ -148,6 +151,22 @@ export default function Home() {
           )
         )}
       </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsSendFeedbackOpen(true)}
+              className="fixed bottom-6 right-6 bg-gray-500 text-white p-2 rounded-full shadow-lg hover:bg-black transition"
+            >
+              <ChatBubbleLeftRightIcon className="w-6 h-6" />
+              <span className="sr-only">Leave Feedback</span>
+            </button>
+
+          </TooltipTrigger>
+          <TooltipContent side="bottom" align="center" className="text-center">Leave <br /> Feedback</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <FeedbackDialog isSendFeedbackOpen={isSendFeedbackOpen} setIsSendFeedbackOpen={setIsSendFeedbackOpen} />
     </main>
   );
 }
