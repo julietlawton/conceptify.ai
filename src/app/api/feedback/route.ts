@@ -1,4 +1,6 @@
-var nodemailer = require('nodemailer');
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const nodemailer = require("nodemailer");
 
 export const maxDuration = 60;
 

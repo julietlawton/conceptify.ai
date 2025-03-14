@@ -35,7 +35,6 @@ export const ChatContext = createContext<ChatContextType | undefined>(undefined)
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     const [conversations, setConversations] = useState<Record<string, Conversation>>({});
     const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [graphData, setGraphData] = useState<KnowledgeGraph | null>(null);
     const [undoGraphActionStack, setUndoGraphActionStack] = useState<KnowledgeGraph[]>([]);
     const [redoGraphActionStack, setRedoGraphActionStack] = useState<KnowledgeGraph[]>([]);
