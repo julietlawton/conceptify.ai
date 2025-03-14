@@ -9,6 +9,7 @@ import { ColorPalettes } from '../ui/color-palettes';
 import { v4 as uuidv4 } from 'uuid';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import toast from "react-hot-toast";
 
 export default function Chat() {
     const {
@@ -18,7 +19,8 @@ export default function Chat() {
         isLoading,
         updateConversationTitle,
         currentConversationId,
-        createNewConversation
+        createNewConversation,
+        addActionToUndoStack
     } = useChat();
 
     const { graphData, updateConversationGraphData } = useCurrentGraph();
@@ -264,12 +266,15 @@ export default function Chat() {
                 };
             }
 
+            addActionToUndoStack();
+
             // Now update the conversation's graph using the context's updater
             if (currentConversationId) {
                 updateConversationGraphData(currentConversationId, mergedGraph);
             }
 
         } catch (error) {
+            toast.error("Graph generation failed. Please try again.");
             console.error("Error generating graph:", error);
         }
     }

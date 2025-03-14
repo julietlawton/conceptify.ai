@@ -22,6 +22,11 @@ interface ChatContextType {
     addMessageToConversation: (message: Message) => void;
     getLastMessageTime: (conversation: Conversation) => number;
     coldStartGraph: (conversationId: string) => void;
+    addActionToUndoStack: () => void;
+    undoAction: () => void;
+    redoAction: () => void;
+    undoStackLength: number;
+    redoStackLength: number;
 }
 
 export const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -32,8 +37,94 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [graphData, setGraphData] = useState<KnowledgeGraph | null>(null);
+    const [undoGraphActionStack, setUndoGraphActionStack] = useState<KnowledgeGraph[]>([]);
+    const [redoGraphActionStack, setRedoGraphActionStack] = useState<KnowledgeGraph[]>([]);
+    const [undoStackLength, setUndoStackLength] = useState(0);
+    const [redoStackLength, setRedoStackLength] = useState(0);
+    const MAX_GRAPH_REVISION_STEPS = 3;
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingConversations, setIsLoadingConversations] = useState(true);
+
+    useEffect(() => {
+        setUndoStackLength(undoGraphActionStack.length);
+        setRedoStackLength(redoGraphActionStack.length);
+    }, [undoGraphActionStack, redoGraphActionStack]);
+
+    const addActionToUndoStack = () => {
+        setUndoGraphActionStack((prev) => {
+            const newStack = [...prev, JSON.parse(JSON.stringify(graphData))];
+
+            if (newStack.length > MAX_GRAPH_REVISION_STEPS) {
+                newStack.shift();
+            }
+
+            return newStack;
+        });
+
+        setRedoGraphActionStack([]);
+    };
+
+    const undoAction = () => {
+        if (undoGraphActionStack.length === 0) return;
+    
+        let nextState: KnowledgeGraph | null = null;
+    
+        setUndoGraphActionStack((prev) => {
+            if (prev.length === 0) return prev;
+    
+            const newStack = prev.slice(0, -1);
+            nextState = prev[prev.length - 1];
+    
+            return newStack;
+        });
+    
+        if (!nextState) return;
+    
+        setRedoGraphActionStack((redoPrev) => {
+            const newRedoStack = [...redoPrev, JSON.parse(JSON.stringify(graphData))];
+    
+            if (newRedoStack.length > MAX_GRAPH_REVISION_STEPS) {
+                newRedoStack.shift();
+            }
+    
+            return newRedoStack;
+        });
+    
+        if (currentConversationId) {
+            updateConversationGraphData(currentConversationId, nextState);
+        }
+    };
+
+    const redoAction = () => {
+        if (redoGraphActionStack.length === 0) return;
+    
+        let nextState: KnowledgeGraph | null = null;
+    
+        setRedoGraphActionStack((prev) => {
+            if (prev.length === 0) return prev;
+    
+            const newStack = prev.slice(0, -1);
+            nextState = prev[prev.length - 1];
+    
+            return newStack;
+        });
+    
+        if (!nextState) return;
+    
+        setUndoGraphActionStack((redoPrev) => {
+            const newUndoStack = [...redoPrev, JSON.parse(JSON.stringify(graphData))];
+    
+            if (newUndoStack.length > MAX_GRAPH_REVISION_STEPS) {
+                newUndoStack.shift();
+            }
+    
+            return newUndoStack;
+        });
+    
+        if (currentConversationId) {
+            updateConversationGraphData(currentConversationId, nextState);
+        }
+    };
 
     const getLastMessageTime = (conversation: Conversation) => {
         const { messages, createdAt } = conversation;
@@ -41,9 +132,9 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
             const most_recent_message_date = messages[messages.length - 1].createdAt;
 
-            if (most_recent_message_date){
+            if (most_recent_message_date) {
                 return new Date(most_recent_message_date).getTime();
-            }else{
+            } else {
                 return new Date(createdAt).getTime();
             }
 
@@ -55,25 +146,25 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const savedConversations = localStorage.getItem("conversations");
         if (savedConversations) {
-          const parsedConversations = JSON.parse(savedConversations) as Record<string, Conversation>;;
-          setConversations(parsedConversations); // Still an object
-      
-          // If you want to auto-select the “most recent” conversation:
-          const sorted = Object.values(parsedConversations).sort(
-            (a, b) => getLastMessageTime(b) - getLastMessageTime(a)
-          );
-      
-          if (sorted.length > 0) {
-            setCurrentConversationId(sorted[0].id);
-            setGraphData(parsedConversations[sorted[0].id].graphData || null);
-          } else {
-            createNewConversation();
-          }
+            const parsedConversations = JSON.parse(savedConversations) as Record<string, Conversation>;;
+            setConversations(parsedConversations); // Still an object
+
+            // If you want to auto-select the “most recent” conversation:
+            const sorted = Object.values(parsedConversations).sort(
+                (a, b) => getLastMessageTime(b) - getLastMessageTime(a)
+            );
+
+            if (sorted.length > 0) {
+                setCurrentConversationId(sorted[0].id);
+                setGraphData(parsedConversations[sorted[0].id].graphData || null);
+            } else {
+                createNewConversation();
+            }
         } else {
-          createNewConversation();
+            createNewConversation();
         }
         setIsLoadingConversations(false);
-      }, []);
+    }, []);
 
     useEffect(() => {
         localStorage.setItem("conversations", JSON.stringify(conversations));
@@ -116,13 +207,13 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const coldStartGraph = (conversationId: string) => {
-        const newGraph = { 
-            nodes: [], 
-            links: [], 
+        const newGraph = {
+            nodes: [],
+            links: [],
             settings: {
-                colorPaletteId: ColorPalettes[0].id, 
+                colorPaletteId: ColorPalettes[0].id,
                 showNodeRelationships: {}
-            } 
+            }
         };
 
         setConversations((prevConversations) => {
@@ -175,6 +266,8 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             setCurrentConversationId(conversationId);
             console.log("Graph data", conversations[conversationId]?.graphData);
             setGraphData(conversations[conversationId]?.graphData || null);
+            setUndoGraphActionStack([]);
+            setRedoGraphActionStack([]);
         }
     };
 
@@ -212,7 +305,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
                 switchConversation,
                 addMessageToConversation,
                 getLastMessageTime,
-                coldStartGraph
+                coldStartGraph,
+                addActionToUndoStack,
+                undoAction,
+                redoAction,
+                undoStackLength,
+                redoStackLength
             }}
         >
             {children}
@@ -233,13 +331,13 @@ export const useCurrentGraph = () => {
     const graphData =
         currentConversationId && conversations[currentConversationId]?.graphData
             ? conversations[currentConversationId].graphData
-            : { 
-                nodes: [], 
-                links: [], 
+            : {
+                nodes: [],
+                links: [],
                 settings: {
-                    colorPaletteId: ColorPalettes[0].id, 
+                    colorPaletteId: ColorPalettes[0].id,
                     showNodeRelationships: {}
-                } 
+                }
             };
 
     return { graphData, updateConversationGraphData };

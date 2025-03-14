@@ -16,20 +16,25 @@ import { UIGraphNode, ColorPalette } from "../lib/types";
 import { inter } from "../ui/fonts";
 import { ColorGradientIcon } from "../ui/icons";
 import { ColorPalettes } from "../ui/color-palettes";
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon } from "@heroicons/react/24/outline";
 
 interface GraphToolbarProps {
-    onAddNode: () => void
-    onEditNode: () => void
-    onDeleteNode: () => void
-    onResetView: () => void
-    onToggleFullScreen: () => void
-    selectedNode: UIGraphNode | null
-    isFullScreen: boolean
-    onDeleteGraph: () => void
+    onAddNode: () => void;
+    onEditNode: () => void;
+    onDeleteNode: () => void;
+    onResetView: () => void;
+    onToggleFullScreen: () => void;
+    selectedNode: UIGraphNode | null;
+    isFullScreen: boolean;
+    onDeleteGraph: () => void;
     onSearchSelect: (node: UIGraphNode) => void;
     nodes: UIGraphNode[];
     onColorPaletteSelect: (palette: ColorPalette) => void;
     currentColorPalette: ColorPalette;
+    onUndo: () => void;
+    onRedo: () => void;
+    undoStackLength: number;
+    redoStackLength: number;
 }
 
 function useOnClickOutside<T extends HTMLElement>(
@@ -65,7 +70,11 @@ export function GraphToolbar({
     onSearchSelect,
     nodes,
     onColorPaletteSelect,
-    currentColorPalette
+    currentColorPalette,
+    onUndo,
+    onRedo,
+    undoStackLength,
+    redoStackLength
 }: GraphToolbarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -313,18 +322,44 @@ export function GraphToolbar({
                     {selectedNode && (
                         <Input type="text" value={selectedNode.name} readOnly className="ml-2 w-40" placeholder="Selected Node" />
                     )}
+                    {undoStackLength !== 0 && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button onClick={onUndo} variant="outline" size="icon">
+                                    <ArrowUturnLeftIcon className="h-4 w-4" />
+                                    <span className="sr-only">Undo</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Undo
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
+                    {redoStackLength !== 0 && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button onClick={onRedo} variant="outline" size="icon">
+                                    <ArrowUturnRightIcon className="h-4 w-4" />
+                                    <span className="sr-only">Redo</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Redo
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
                 </div>
 
 
                 <div className="flex items-center">
-                 <button
-                     className="flex items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
-                     onClick={() => setIsDialogOpen(true)}
-                 >
-                     <span>Delete graph</span>
-                 </button>
- 
-             </div>
+                    <button
+                        className="flex items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
+                        onClick={() => setIsDialogOpen(true)}
+                    >
+                        <span>Delete graph</span>
+                    </button>
+
+                </div>
             </TooltipProvider >
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
@@ -341,7 +376,7 @@ export function GraphToolbar({
                             variant="destructive"
                             onClick={() => {
                                 setIsDialogOpen(false);
-                                onDeleteGraph(); 
+                                onDeleteGraph();
                             }}
                         >
                             Delete
