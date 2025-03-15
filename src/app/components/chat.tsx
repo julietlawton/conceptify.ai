@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import toast from "react-hot-toast";
+import { CognitionIcon } from '../ui/icons';
 
 export default function Chat() {
     const {
@@ -35,6 +36,7 @@ export default function Chat() {
 
     const [hasScrollbar, setHasScrollbar] = useState(false);
     const [isAtBottom, setIsAtBottom] = useState(false);
+    const messagesRef = useRef(messages);
 
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -42,10 +44,25 @@ export default function Chat() {
         }
     }, [localMessages]);
 
+    const scrollToBottom = () => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: "smooth",
+            });
+        }
+    };
+
     useEffect(() => {
-        // Whenever the conversation changes, reset localMessages to match it
-        setLocalMessages(messages);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        messagesRef.current = messages;
+    }, [messages]);
+
+    useEffect(() => {
+        setLocalMessages(messagesRef.current);
+
+        requestAnimationFrame(() => {
+            scrollToBottom();
+        });
     }, [currentConversationId]);
 
     useEffect(() => {
@@ -53,6 +70,7 @@ export default function Chat() {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
+        setIsAtBottom(true);
     }, [messages]);
 
     const generateChatTitle = async (message: string) => {
@@ -129,10 +147,10 @@ export default function Chat() {
         setLocalMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
         for await (const chunk of await streamModelResponse([...messages, userMessage])) {
-            if (stoppedRef.current) { 
+            if (stoppedRef.current) {
                 break;
             }
-        
+
             streamedContent += chunk;
             setLocalMessages((prev) => {
                 if (stoppedRef.current) {
@@ -295,15 +313,6 @@ export default function Chat() {
         }
     };
 
-    const scrollToBottom = () => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTo({
-                top: chatContainerRef.current.scrollHeight,
-                behavior: "smooth",
-            });
-        }
-    };
-
     const handleScroll = () => {
         if (!chatContainerRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
@@ -321,8 +330,15 @@ export default function Chat() {
             <div
                 ref={chatContainerRef}
                 onScroll={handleScroll}
-                className={`flex-1 min-h-0 w-full overflow-y-auto ${streamingMessageId ? "pb-[50vh]" : "pb-12"}`
+                className={`flex-1 min-h-0 w-full overflow-y-auto ${streamingMessageId ? "pb-[50vh]" : "pb-4"}`
                 }>
+                {messages.length === 0 && (
+                    <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 p-10 border border-gray-200 rounded-xl shadow-sm bg-white text-gray-500 text-lg space-y-3 text-center">
+                        <CognitionIcon className="w-12 h-12 text-gray-400 mx-auto" />
+                        <p className="font-medium">Start a conversation</p>
+                        <p className="text-sm text-gray-400">Ask a question or send a message.</p>
+                    </div>
+                )}
                 <div className={`max-w-5xl mx-auto flex flex-col space-y-2 pl-8 py-6 ${hasScrollbar ? "pr-11" : "pr-14"}`}>
                     {localMessages.map((msg, index) => (
                         < ChatBubble
@@ -354,6 +370,23 @@ export default function Chat() {
                             </Tooltip>
                         </TooltipProvider>
 
+                    </div>
+                )}
+                {messages.length === 0 && (
+                    <div className="grid grid-cols-3 gap-2 max-w-3xl mx-auto pb-2 px-4">
+                        {[
+                            { sample_prompt: "How does quantum computing work?" },
+                            { sample_prompt: "Explain Like I'm 5: Machine Learning" },
+                            { sample_prompt: "How do I reverse a list in Python?" },
+                        ].map((prompt, index) => (
+                            <button
+                                key={index}
+                                className="p-2 border border-gray-300 rounded-lg text-left hover:bg-gray-100 transition"
+                                onClick={() => sendMessage(prompt.sample_prompt)}
+                            >
+                                <p className="text-gray-600 text-sm">{prompt.sample_prompt}</p>
+                            </button>
+                        ))}
                     </div>
                 )}
                 <div className="px-4 pb-4 bg-white">

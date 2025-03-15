@@ -2,25 +2,6 @@ import { ColorPalette } from "@/app/lib/types";
 
 export const ColorPalettes: ColorPalette[] = [
     {
-        id: "balloons",
-        name: "Balloons",
-        colors: [
-            " #378d00",
-            " #86cd0a",
-            " #df5734",
-            " #9c0096",
-            " #ff7f00",
-            " #eccd1d",
-            " #20b2ad",
-            " #e37bd0",
-            " #129edf",
-            " #1912df",
-        ],
-        nodeHighlight: " #f6ff00",
-        linkHighlight: " #FFA500",
-        textColor: "white"
-    },
-    {
         id: "plasma",
         name: "Plasma",
         colors: [
@@ -59,18 +40,19 @@ export const ColorPalettes: ColorPalette[] = [
         textColor: "white"
     },
     {
-        id: "seafoam",
-        name: "Sea Foam",
-        colors: ['#008000',
-            ' #005d17',
-            ' #003a2e',
-            ' #001746',
-            ' #00518b',
-            ' #0074a2',
-            ' #1489b1',
-            ' #2e97b9',
-            ' #74b9d1',
-            ' #89c4d8',
+        id: "balloons",
+        name: "Balloons",
+        colors: [
+            " #378d00",
+            " #86cd0a",
+            " #df5734",
+            " #9c0096",
+            " #ff7f00",
+            " #eccd1d",
+            " #20b2ad",
+            " #e37bd0",
+            " #129edf",
+            " #1912df",
         ],
         nodeHighlight: " #f6ff00",
         linkHighlight: " #FFA500",
@@ -115,25 +97,6 @@ export const ColorPalettes: ColorPalette[] = [
         textColor: "white"
     },
     {
-        id: "popart",
-        name: "Pop Art",
-        colors: [
-            " #ffd926",
-            " #ffb24d",
-            " #ff8b74",
-            " #ff649b",
-            " #e63cc3",
-            " #a915ea",
-            " #6b00ff",
-            " #2e00ff",
-            " #00009d",
-            " #000000"
-        ],
-        nodeHighlight: " #f6ff00",
-        linkHighlight: " #FFA500",
-        textColor: "white"
-    },
-    {
         id: "electric",
         name: "Electric",
         colors: [
@@ -153,19 +116,38 @@ export const ColorPalettes: ColorPalette[] = [
         textColor: "white"
     },
     {
+        id: "popart",
+        name: "Pop Art",
+        colors: [
+            " #ffd926",
+            " #ffb24d",
+            " #ff8b74",
+            " #ff649b",
+            " #e63cc3",
+            " #a915ea",
+            " #6b00ff",
+            " #2e00ff",
+            " #00009d",
+            " #000000"
+        ],
+        nodeHighlight: " #f6ff00",
+        linkHighlight: " #FFA500",
+        textColor: "white"
+    },
+    {
         id: "teahouse",
         name: "Tea House",
         colors: [
-            '#adc3cd',
-            '#759ac1',
-            '#6068b6',
-            '#5b3196',
-            '#3e1150',
-            '#41123d',
-            '#7b2150',
-            '#a94950',
-            '#c48065',
-            '#d2b7a5',
+            ' #adc3cd',
+            ' #759ac1',
+            ' #6068b6',
+            ' #5b3196',
+            ' #3e1150',
+            ' #41123d',
+            ' #7b2150',
+            ' #a94950',
+            ' #c48065',
+            ' #d2b7a5',
         ],
         nodeHighlight: " #f6ff00",
         linkHighlight: " #FFA500",
@@ -175,16 +157,35 @@ export const ColorPalettes: ColorPalette[] = [
         id: "blues",
         name: "Blues",
         colors: [
-            '#b4d3e9',
-            '#9ac8e0',
-            '#7ab6d9',
-            '#5fa6d1',
-            '#4594c7',
-            '#3080bd',
-            '#1d6cb1',
-            '#0e58a2',
-            '#084488',
-            '#08306b'
+            ' #b4d3e9',
+            ' #9ac8e0',
+            ' #7ab6d9',
+            ' #5fa6d1',
+            ' #4594c7',
+            ' #3080bd',
+            ' #1d6cb1',
+            ' #0e58a2',
+            ' #084488',
+            ' #08306b'
+        ],
+        nodeHighlight: " #f6ff00",
+        linkHighlight: " #FFA500",
+        textColor: "white"
+    },
+    {
+        id: "reds",
+        name: "Reds",
+        colors: [
+            '#f96044',
+            '#f34c37',
+            '#ed392b',
+            '#dd2a25',
+            '#cf1c1f',
+            '#be151a',
+            '#af1117',
+            '#9a0c14',
+            '#800610',
+            '#67000d'
         ],
         nodeHighlight: " #f6ff00",
         linkHighlight: " #FFA500",
@@ -192,6 +193,7 @@ export const ColorPalettes: ColorPalette[] = [
     },
 ];
 
-export const colorPaletteById: { [id: string]: ColorPalette } = Object.fromEntries(
-    ColorPalettes.map(palette => [palette.id, palette])
-);
+export const colorPaletteById: { [id: string]: ColorPalette } = {
+    ...Object.fromEntries(ColorPalettes.map(palette => [palette.id, palette])),
+    defaultPalette: ColorPalettes[0],
+};

@@ -51,7 +51,15 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     const addActionToUndoStack = () => {
         setUndoGraphActionStack((prev) => {
-            const newStack = [...prev, JSON.parse(JSON.stringify(graphData))];
+            const safeGraphData = graphData ?? {
+                nodes: [],
+                links: [],
+                settings: {
+                    colorPaletteId: "defaultPalette",
+                    showNodeRelationships: {},
+                },
+            };
+            const newStack = [...prev, JSON.parse(JSON.stringify(safeGraphData))];
 
             if (newStack.length > MAX_GRAPH_REVISION_STEPS) {
                 newStack.shift();

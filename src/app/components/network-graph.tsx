@@ -251,7 +251,7 @@ export default function NetworkGraph({
 
     const nodeColor = useCallback((node: NodeObject) => {
         const typedNode = node as UIGraphNode;
-        const palette = colorPaletteById[uiGraphData.settings.colorPaletteId];
+        const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
         const hash = djb2(typedNode.id);
 
         return palette.colors[hash % palette.colors.length];
@@ -270,7 +270,9 @@ export default function NetworkGraph({
                 typeof typedLink.target === "object" && typedLink.target
                     ? typedLink.target.id
                     : typedLink.target;
-            const linkHighlightColor = colorPaletteById[uiGraphData.settings.colorPaletteId].linkHighlight;
+            
+            const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
+            const linkHighlightColor = palette.linkHighlight ?? colorPaletteById.defaultPalette.linkHighlight;
             return highlightLinks.has(typedLink.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde"
         },
         [highlightLinks, uiGraphData.settings.colorPaletteId],
@@ -568,7 +570,7 @@ export default function NetworkGraph({
                 nodes={uiGraphData.nodes}
                 onSearchSelect={handleSearchSelect}
                 onColorPaletteSelect={handleColorPaletteSelect}
-                currentColorPalette={colorPaletteById[uiGraphData.settings.colorPaletteId]}
+                currentColorPalette={colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette}
                 onUndo={undoAction}
                 onRedo={redoAction}
                 undoStackLength={undoStackLength}
@@ -647,18 +649,15 @@ export default function NetworkGraph({
                         ctx.arc(node.x ?? 0, node.y ?? 0, nodeSize, 0, 2 * Math.PI);
                         ctx.fillStyle = nodeColor(node);
                         ctx.fill();
-
-                        const paletteTextColor = colorPaletteById[uiGraphData.settings.colorPaletteId].textColor;
-                        const paletteNodeHighlightColor = colorPaletteById[uiGraphData.settings.colorPaletteId].nodeHighlight;
+                        
+                        const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
+                        const paletteTextColor = palette.textColor ?? colorPaletteById.defaultPalette.textColor;
+                        const paletteNodeHighlightColor = palette.nodeHighlight ?? colorPaletteById.defaultPalette.nodeHighlight;
 
                         // Set text properties
                         ctx.textAlign = "center";
                         ctx.textBaseline = "middle";
                         ctx.fillStyle = paletteTextColor;
-
-                        // ctx.strokeStyle = "black";
-                        // ctx.lineWidth = 0.25;
-                        // ctx.stroke();
 
                         // Center the block of wrapped text vertically.
                         const totalHeight = lines.length * lineHeight;

@@ -153,7 +153,7 @@ export default function SideNav() {
 
 
     return (
-        <div className="w-64 min-64 flex h-full flex-col bg-gray-100">
+        <div className="w-64 min-64 flex h-full flex-col bg-gray-100 border-r border-gray-200">
             <div className="flex items-center justify-between px-4 py-5">
                 <h2 className="text-lg font-bold">Chats</h2>
                 <TooltipProvider>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Bars3Icon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
-import { GraphIcon } from "./ui/icons";
+import { GraphIcon, RainbowGraphIcon } from "./ui/icons";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import FeedbackDialog from "./components/feedback-dialog";
 
@@ -124,28 +124,27 @@ export default function Home() {
           isVisualizerOpen && (
             <div
               className="flex items-center justify-center h-full w-full bg-gray-100 bg-center bg-no-repeat bg-contain"
-              style={{
-                backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('/graph-placeholder.svg')`,
-              }}
             >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <p className="text-gray-500 text-lg">
-                  Nothing here yet. Add a message to get started
-                </p>
-                <p className="text-gray-500 text-lg">or</p>
-                <button
-                  className="px-4 py-2 text-sm text-white bg-gray-500 rounded-md hover:bg-black"
-                  onClick={() => {
-                    if (currentConversationId) {
-                      coldStartGraph(currentConversationId);
-                    } else {
-                      console.warn("No active conversation yet");
-                    }
-                  }
-                  }
-                >
-                  Create Empty Graph
-                </button>
+              <div className="relative h-full w-full bg-gray-100 flex items-center justify-center">
+                <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 p-10 border border-gray-200 rounded-xl shadow-sm bg-white text-gray-500 text-lg space-y-3 text-center">
+                  <RainbowGraphIcon className="w-12 h-12 text-gray-500 mx-auto" />
+                  <p className="font-medium">Nothing here yet</p>
+                  <p className="text-sm text-gray-400 pb-1">Start chatting to get started, or create an empty graph.</p>
+                  <button
+                    className="px-4 py-2 text-sm text-white rounded-md 
+                      bg-gradient-to-r from-gray-500 to-gray-500
+                      hover:from-purple-500 hover:to-blue-500 transition"
+                    onClick={() => {
+                      if (currentConversationId) {
+                        coldStartGraph(currentConversationId);
+                      } else {
+                        console.warn("No active conversation yet");
+                      }
+                    }}
+                  >
+                    Create Empty Graph
+                  </button>
+                </div>
               </div>
             </div>
           )
