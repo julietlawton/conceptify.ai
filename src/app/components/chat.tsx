@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useChat, useCurrentGraph } from '../context/ChatContext';
 import { Message } from 'ai';
-import { getModelResponse, streamModelResponse } from '../lib/model';
+import { generateGraphFromMessage, getModelResponse, streamModelResponse } from '../lib/model';
 import ChatInput from './chat-input'
 import { ChatBubble } from './chat-bubble';
 import { GraphLink, GraphNode, KnowledgeGraph } from '../lib/types';
@@ -93,13 +93,19 @@ export default function Chat() {
                 that starts with this message:\n\n"${message}"\n\nTitle:`
             }
         ];
+        try{
+            const titleResponse = await getModelResponse(introMessages);
 
-        const titleResponse = await getModelResponse(introMessages);
-        console.log(titleResponse)
+            if (titleResponse) {
+                updateConversationTitle(titleResponse.trim());
+            }
+        } catch(error){
+            console.error("Error generating chat title:", error);
 
-        if (titleResponse) {
-            updateConversationTitle(titleResponse.trim());
+            const errMsg = error instanceof Error ? error.message : "Unknown error.";
+            toast.error(errMsg);
         }
+        
     };
 
     const sendMessage = async (text: string) => {
@@ -116,9 +122,8 @@ export default function Chat() {
             createNewConversation();
         }
 
-        console.log(messages.length);
-        if (messages.length === 0) {
-            generateChatTitle(userMessage.content);
+        if(messages.length === 0){
+            await generateChatTitle(userMessage.content);
         }
 
         // Add user message to conversation (persistent)
@@ -132,8 +137,6 @@ export default function Chat() {
             chatContainerRef.current.scrollTop = 0;
         }
 
-        let streamedContent = "";
-
         const assistantMessage: Message = {
             id: uuidv4(),
             role: "assistant",
@@ -146,25 +149,32 @@ export default function Chat() {
         // Temporarily add assistant message to UI
         setLocalMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
-        for await (const chunk of await streamModelResponse([...messages, userMessage])) {
-            if (stoppedRef.current) {
-                break;
-            }
-
-            streamedContent += chunk;
-            setLocalMessages((prev) => {
+        let streamedContent = "";
+        try{
+            for await (const chunk of streamModelResponse([...messages, userMessage])) {
                 if (stoppedRef.current) {
-                    return prev;
+                    break;
                 }
-                return prev.map((msg) =>
-                    msg.id === assistantMessage.id ? { ...msg, content: streamedContent } : msg
-                );
-            });
-        }
 
-        addMessageToConversation({ ...assistantMessage, content: streamedContent });
-        setStreamingMessageId(null);
-        setIsLoading(false);
+                streamedContent += chunk;
+                setLocalMessages((prev) => {
+                    if (stoppedRef.current) {
+                        return prev;
+                    }
+                    return prev.map((msg) =>
+                        msg.id === assistantMessage.id ? { ...msg, content: streamedContent } : msg
+                    );
+                });
+            }
+            addMessageToConversation({ ...assistantMessage, content: streamedContent });
+        }catch(error){
+            console.error("Error sending message:", error);
+            const errMsg = error instanceof Error ? error.message : "Unknown error.";
+            toast.error(errMsg);
+        }finally{
+            setStreamingMessageId(null);
+            setIsLoading(false);
+        }
     };
 
     async function addToGraph(msg: Message, existingGraph?: KnowledgeGraph) {
@@ -183,29 +193,18 @@ export default function Chat() {
                 }
                 : null;
 
-            console.log(existingGraph);
+            const requestBody =
+            strippedGraph !== null && strippedGraph.nodes.length !== 0
+              ? { assistantMessage: msg.content, existingGraph: strippedGraph }
+              : { assistantMessage: msg.content };
 
-            console.log(strippedGraph);
+            const response = await generateGraphFromMessage(requestBody);
 
-            const requestBody = existingGraph
-                ? { assistantMessage: msg.content, existingGraph: strippedGraph }
-                : { assistantMessage: msg.content };
-
-            console.log(requestBody);
-
-            const response = await fetch("/api/graph/generate", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(requestBody),
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to generate graph");
+            if (!response){
+                console.log("error");
+                return;
             }
-
-            const newGraphData: KnowledgeGraph = await response.json();
+            const newGraphData: KnowledgeGraph = response;
             console.log("Data returned from model:", newGraphData);
 
             // Convert nodes into correct format with unique IDs

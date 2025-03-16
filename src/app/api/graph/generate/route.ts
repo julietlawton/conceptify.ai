@@ -1,7 +1,9 @@
-import { generateObject } from 'ai';
+import { APICallError, generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { KnowledgeGraph } from '@/app/lib/types';
+import { NextResponse } from 'next/server';
 
 const GraphSchema = z.object({
     nodes: z.array(
@@ -21,13 +23,26 @@ const GraphSchema = z.object({
 
 export const maxDuration = 60;
 
-
 export async function POST(req: Request) {
-    const { assistantMessage, existingGraph }: { assistantMessage: string; existingGraph?: KnowledgeGraph } = await req.json();
+    try {
+        const { assistantMessage, existingGraph, selectedProvider, selectedGraphModel, apiKey }:
+            { assistantMessage: string; existingGraph?: KnowledgeGraph; selectedProvider: string; selectedGraphModel: string; apiKey: string }
+            = await req.json();
 
-const graph_prompt = (existingGraph && existingGraph.nodes.length > 0)
-? `You are updating an existing knowledge graph based on the latest message in a conversation between a user and an assistant..
-The graph consists of **nodes (concepts)** and **edges (relationships between concepts)**. Your goal is to create a living history of the conversation by 
+        let modelFunction;
+        if (selectedProvider === "openai") {
+            process.env.OPENAI_API_KEY = apiKey;
+            modelFunction = openai(selectedGraphModel);
+        } else if (selectedProvider === "anthropic") {
+            process.env.ANTHROPIC_API_KEY = apiKey;
+            modelFunction = anthropic(selectedGraphModel);
+        } else {
+            return new NextResponse("Invalid provider.", { status: 400 });
+        }
+
+        const graph_prompt = (existingGraph && existingGraph.nodes.length > 0)
+            ? `You are updating an existing knowledge graph based on the latest message in a conversation between a user and an assistant..
+The graph consists of an array of **nodes (concepts)** and an array of **edges (relationships between concepts)**. Your goal is to create a living history of the conversation by 
 summarizing key information and concepts and the relationships between them.
 
 **Your task**:
@@ -53,8 +68,8 @@ ${JSON.stringify(existingGraph, null, 2)}
 "${assistantMessage}"
 
 **Return updated graph JSON ONLY—NO explanation.**`
-: `You are building a structured knowledge graph based on the latest message in a conversation between a user and an assistant.
-Your goal is to create a living history of the conversation by summarizing key information and concepts as **nodes** and the relationships between them as **edges**.
+            : `You are building a structured knowledge graph based on the latest message in a conversation between a user and an assistant.
+Your goal is to create a living history of the conversation by summarizing key information and concepts **nodes** and the relationships between them **edges**.
 
 **Your task**:
 1. Identify the most important information from the message and generate as many nodes as needed.
@@ -88,14 +103,29 @@ Your goal is to create a living history of the conversation by summarizing key i
 
 **Return JSON ONLY—NO explanation.**`;
 
-    console.log(assistantMessage);
-    console.log(graph_prompt);
+        const result = await generateObject({
+            model: modelFunction,
+            prompt: graph_prompt,
+            schema: GraphSchema
+        });
 
-    const result = await generateObject({
-        model: openai("gpt-4o"),
-        prompt: graph_prompt,
-        schema: GraphSchema
-    });
+        return result.toJsonResponse();
+    } catch (error) {
+        console.error("API Error caught in route.ts:", error);
 
-    return result.toJsonResponse();
+        if (APICallError.isInstance(error)) {
+            const status = error.statusCode;
+
+            let message = "An error occurred.";
+            if (status === 401) message = "Invalid API key.";
+            else if (status === 403) message = "Permission denied.";
+            else if (status === 429) message = "Rate limit exceeded.";
+            else if (status === 400) message = "Bad request.";
+            else if (status && status >= 500) message = "Server error.";
+
+            return new NextResponse(message, { status });
+        }
+
+        return new NextResponse("Unexpected error occurred.", { status: 500 });
+    }
 }

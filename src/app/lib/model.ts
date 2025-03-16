@@ -1,66 +1,81 @@
 import { Message } from "ai";
+import { KnowledgeGraph } from "./types";
+import { MODEL_PROVIDERS } from "./modelConfig";
 
 export async function getModelResponse(messages: Message[]) {
-  try {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, stream: false }),
-    });
+  const selectedProvider = localStorage.getItem("selectedProvider");
+  const selectedChatModel = localStorage.getItem("selectedChatModel");
+  const apiKey = localStorage.getItem("apiKey");
 
-    if (!response.ok) {
-      let errorMessage = "Failed to fetch response";
-      switch (response.status) {
-        case 504:
-          errorMessage = "Request timed out";
-          break;
-        case 500:
-          errorMessage = "Internal server error";
-          break;
-        default:
-          errorMessage = `Error: ${response.status}`;
-          break;
-      }
-      throw new Error(errorMessage);
-    }
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messages, stream: false, selectedProvider, selectedChatModel, apiKey }),
+  });
 
-    const { text } = await response.json();
-
-    return text;
-
-  } catch (error) {
-    console.error("Error generating response.", error);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const errorMsg = body?.error || `Unexpected error: ${response.status}`;
+    console.log("getModelResponse", body)
+    throw new Error(errorMsg);
   }
+
+
+  const { text } = await response.json();
+
+  return text;
+
 }
 
 export async function* streamModelResponse(messages: Message[]) {
+  const selectedProvider = localStorage.getItem("selectedProvider");
+  const selectedChatModel = localStorage.getItem("selectedChatModel");
+  const apiKey = localStorage.getItem("apiKey");
+
   try {
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, stream: true }),
+      body: JSON.stringify({ messages, stream: true, selectedProvider, selectedChatModel, apiKey }),
     });
 
+
     if (!response.ok) {
-      let errorMessage = "Failed to fetch response";
-      switch (response.status) {
-        case 504:
-          errorMessage = "Request timed out. Please try again.";
-          break;
-        case 500:
-          errorMessage = "Internal server error. Please try again.";
-          break;
-        default:
-          errorMessage = `Error: ${response.status}`;
-          break;
-      }
-      throw new Error(errorMessage);
+      const body = await response.json().catch(() => null);
+      const errorMsg = body?.error || `Unexpected error: ${response.status}`;
+      console.error("Response not OK:", errorMsg);
+      throw new Error(errorMsg);
     }
 
     const reader = response.body?.getReader();
-    if (!reader) throw new Error("No readable stream found");
+    if (!reader) {
+      console.error("No reader found");
+      throw new Error("No readable stream found");
+    }
 
     const decoder = new TextDecoder();
+
+    const firstResult = await reader.read();
+    if (firstResult.done) {
+      // The stream ended immediately with no data.
+      throw new Error("Error generating response.");
+    }
+    const firstChunk = decoder.decode(firstResult.value, { stream: true });
+
+    // Attempt to parse the first chunk as JSON.
+    try {
+      const parsed = JSON.parse(firstChunk);
+      if (parsed.error) {
+        throw new Error(parsed.error);
+      }
+    } catch (parseError) {
+      // If parsing fails, assume the chunk is normal text.
+      // (If the first chunk isn’t valid JSON, it's likely a regular message.)
+    }
+
+    // Yield the first chunk and continue with the rest of the stream.
+    yield firstChunk;
+
 
     while (true) {
       const { done, value } = await reader.read();
@@ -71,6 +86,38 @@ export async function* streamModelResponse(messages: Message[]) {
     }
   } catch (error) {
     console.error("Error streaming text:", error);
+    // This yield won't be hit if error is thrown BEFORE yield
     yield error instanceof Error ? error.message : "Error generating response.";
   }
+}
+
+
+export async function generateGraphFromMessage(requestBody: {
+  assistantMessage: string;
+  existingGraph?: {
+    nodes: string[];
+    links: { source: string; target: string; label: string }[];
+  };
+}) {
+    const selectedProvider = localStorage.getItem("selectedProvider");
+    const selectedGraphModel = MODEL_PROVIDERS[selectedProvider as keyof typeof MODEL_PROVIDERS].graphModel;
+    const apiKey = localStorage.getItem("apiKey");
+
+    const response = await fetch("/api/graph/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ...requestBody, selectedProvider, selectedGraphModel, apiKey }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      const errorMsg = body?.error || `Unexpected error: ${response.status}`;
+      throw new Error(errorMsg);
+    }
+
+    const newGraphData: KnowledgeGraph = await response.json();
+
+    return newGraphData;
 }

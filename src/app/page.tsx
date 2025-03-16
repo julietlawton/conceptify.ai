@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Bars3Icon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
-import { GraphIcon, RainbowGraphIcon } from "./ui/icons";
+import { GraphIcon } from "./ui/icons";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import FeedbackDialog from "./components/feedback-dialog";
 
@@ -126,8 +126,8 @@ export default function Home() {
               className="flex items-center justify-center h-full w-full bg-gray-100 bg-center bg-no-repeat bg-contain"
             >
               <div className="relative h-full w-full bg-gray-100 flex items-center justify-center">
-                <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 p-10 border border-gray-200 rounded-xl shadow-sm bg-white text-gray-500 text-lg space-y-3 text-center">
-                  <RainbowGraphIcon className="w-12 h-12 text-gray-500 mx-auto" />
+                <div className="absolute top-[32%] left-1/2 transform -translate-x-1/2 p-10 border border-gray-200 rounded-xl shadow-sm bg-white text-gray-500 text-lg space-y-3 text-center">
+                  <GraphIcon className="w-12 h-12 text-gray-500 mx-auto" />
                   <p className="font-medium">Nothing here yet</p>
                   <p className="text-sm text-gray-400 pb-1">Start chatting to get started, or create an empty graph.</p>
                   <button

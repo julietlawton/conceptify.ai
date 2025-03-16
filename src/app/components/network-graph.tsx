@@ -769,6 +769,10 @@ export default function NetworkGraph({
                                             <SelectContent>
                                                 {graphData.nodes
                                                     .filter((node) => dialogMode === "edit" ? node.id !== selectedNode?.id : true)
+                                                    .filter((node) =>
+                                                        newNodeData.edges[index]?.nodeId === node.id || 
+                                                        !newNodeData.edges.some((edge) => edge.nodeId === node.id)
+                                                    )
                                                     .sort((a, b) => a.name.localeCompare(b.name))
                                                     .map((node) => (
                                                         <SelectItem key={node.id} value={node.id}>

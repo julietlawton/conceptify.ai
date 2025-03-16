@@ -148,7 +148,7 @@ export function ChatBubble({
                         )
                     )}
 
-                    {msg.role === "assistant" && streamingMessageId !== msg.id && (
+                    {msg.role === "assistant" && streamingMessageId !== msg.id && msg.content.length > 30 && (
                         <div className="flex space-x-2 mt-2">
                             <button
                                 className={`flex items-center gap-1 px-2 py-1 text-black text-sm bg-white rounded-md
