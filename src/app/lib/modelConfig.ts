@@ -5,7 +5,6 @@ export const MODEL_PROVIDERS: Record<
     displayName: "OpenAI",
     models: [
         "gpt-4o",
-        "gpt4",
         "gpt-4-turbo",
         "gpt-4o-mini",
         "o1",

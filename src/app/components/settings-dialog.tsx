@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 import { MODEL_PROVIDERS } from "../lib/modelConfig"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useApiKey } from "../context/APIContext";
 
 export default function SettingsDialog({
     isSettingsOpen,
@@ -67,16 +68,23 @@ export default function SettingsDialog({
 
     const [selectedModelProvider, setSelectedModelProvider] = useState<string | null>(null);
     const [selectedChatModel, setSelectedChatModel] = useState<string | null>(null);
-    const [apiKey, setApiKey] = useState("");
+    const { apiKey, setApiKey, setPassphrase } = useApiKey();
+
+    const [usePassphrase, setUsePassphrase] = useState(true);
+    const [localPassphrase, setLocalPassphrase] = useState("");
+    const [localApiKeyInput, setLocalApiKeyInput] = useState(apiKey || "");
+
+    const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const sanitizedValue = e.target.value.replace(/[^A-Za-z0-9-_]/g, "");
+        setLocalApiKeyInput(sanitizedValue);
+    };
 
     useEffect(() => {
         const storedProvider = localStorage.getItem("selectedProvider");
         const storedModel = localStorage.getItem("selectedChatModel");
-        const storedKey = localStorage.getItem("apiKey");
-    
+
         if (storedProvider) setSelectedModelProvider(storedProvider);
         if (storedModel) setSelectedChatModel(storedModel);
-        if (storedKey) setApiKey(storedKey);
     }, []);
 
     const handleExportData = () => {
@@ -138,21 +146,25 @@ export default function SettingsDialog({
             return;
         }
 
-        console.log("selectedProvider", selectedModelProvider);
-        console.log("selectedChatModel", selectedChatModel);
-        console.log("apiKey", apiKey);
+        if (usePassphrase && localPassphrase.trim() === "") {
+            toast.error("Please enter a password or disable password protection.");
+            return;
+        }
 
         localStorage.setItem("selectedProvider", selectedModelProvider);
         localStorage.setItem("selectedChatModel", selectedChatModel);
-        localStorage.setItem("apiKey", apiKey);
+
+        const shouldEncrypt = usePassphrase && localPassphrase.trim() !== "";
+
+        if (shouldEncrypt) {
+            setApiKey(localApiKeyInput, true, localPassphrase.trim());
+            setPassphrase(localPassphrase.trim());
+        } else {
+            setApiKey(localApiKeyInput, false);
+        }
 
         setIsSettingsOpen(false);
         toast.success("Settings saved!");
-    };
-
-    const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const sanitizedValue = e.target.value.replace(/[^A-Za-z0-9-_]/g, "");
-        setApiKey(sanitizedValue);
     };
 
     return (
@@ -164,7 +176,7 @@ export default function SettingsDialog({
                         Configure your model provider settings and manage your data.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="p-4 space-y-4">
+                <div className="p-4 space-y-4 whitespace-nowrap">
                     <div className="grid grid-cols-4 items-center gap-4 pl-2">
                         <div className="flex items-center justify-center gap-1 whitespace-nowrap mr-2">
                             <Label htmlFor="modelProvider">Model Provider</Label>
@@ -197,10 +209,10 @@ export default function SettingsDialog({
                             <div className="grid grid-cols-4 items-center gap-4 pl-2">
                                 <div className="flex items-center justify-center gap-1 whitespace-nowrap mr-2">
                                     <Label htmlFor="apiKey">
-                                        Provider API Key
+                                        API Key
                                     </Label>
                                     <div className="relative group mr-2">
-                                        <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 mr-2 -translate-y-1/4" />
+                                        <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 -translate-y-1/4" />
                                         <div className="absolute left-1/2 w-[200px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
                                             <p>Set your API key from {MODEL_PROVIDERS[selectedModelProvider as keyof typeof MODEL_PROVIDERS].displayName}.</p>
                                         </div>
@@ -208,15 +220,71 @@ export default function SettingsDialog({
                                 </div>
                                 <Input
                                     id="apiKey"
-                                    value={apiKey}
+                                    value={localApiKeyInput}
                                     onChange={handleApiKeyChange}
                                     className="col-span-3"
                                     placeholder="sk-..."
                                 />
                             </div>
+                            <>
+
+                                <div className="grid grid-cols-4 items-center gap-4 pl-2 mt-4">
+                                    <div className="flex items-center justify-center gap-1 whitespace-nowrap mr-2">
+                                        <Label htmlFor="usePassphrase">Security</Label>
+                                        <div className="relative group mr-2">
+                                            <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer" />
+                                            <div className="absolute left-1/2 top-full mt-1 w-[200px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal z-50">
+                                                <p>If enabled, your API key will be encrypted with this password. You’ll need to re-enter it to access the key.</p><br></br>
+                                                <p>Use this option when:</p>
+                                                <ul className="mt-1 list-disc list-inside">
+                                                    <li>You are sharing this browser with other people.</li>
+                                                    <li>You have untrusted browser extensions installed.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-3 flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="usePassphrase"
+                                            checked={usePassphrase}
+                                            onChange={(e) => setUsePassphrase(e.target.checked)}
+                                            className="h-4 w-4 accent-black"
+                                        />
+                                        <Label htmlFor="usePassphrase" className="cursor-pointer">
+                                            Require a password to secure my API key
+                                        </Label>
+                                    </div>
+                                </div>
+
+                                {usePassphrase && (
+                                    <div className="grid grid-cols-4 items-center gap-4 pl-2 mt-2">
+                                        <Label htmlFor="passphrase" className="col-span-1"> </Label>
+                                        <Input
+                                            id="passphrase"
+                                            type="password"
+                                            value={localPassphrase}
+                                            onChange={(e) => setLocalPassphrase(e.target.value)}
+                                            className="col-span-3"
+                                            placeholder="Enter password"
+                                        />
+                                    </div>
+                                )}
+
+                                {!usePassphrase && (
+                                    <div className="grid grid-cols-4 items-center gap-4 pl-2 mt-2">
+                                        <Label className="col-span-1" />
+                                        <div className="col-span-3 text-sm text-yellow-600">
+                                            Warning: Your API key will be stored in plaintext.
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+
                             <div className="grid grid-cols-4 items-center gap-4 pl-2">
-                                <div className="flex items-center justify-center gap-1 mr-2 whitespace-nowrap">
-                                    <Label htmlFor="modelVersion">Model Version</Label>
+                                <div className="flex items-center justify-center gap-1 whitespace-nowrap mr-2">
+                                    <Label htmlFor="modelProvider">Model Version</Label>
                                     <div className="relative group">
                                         <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 -translate-y-1/4" />
                                         <div className="absolute left-1/2 w-[200px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">

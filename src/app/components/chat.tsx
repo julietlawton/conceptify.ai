@@ -11,6 +11,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/comp
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import toast from "react-hot-toast";
 import { CognitionIcon } from '../ui/icons';
+import { useApiKey } from '../context/APIContext';
 
 export default function Chat() {
     const {
@@ -23,6 +24,8 @@ export default function Chat() {
         createNewConversation,
         addActionToUndoStack
     } = useChat();
+
+    const { apiKey } = useApiKey();
 
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
@@ -93,8 +96,14 @@ export default function Chat() {
                 that starts with this message:\n\n"${message}"\n\nTitle:`
             }
         ];
+
+        if (!apiKey) {
+            toast.error("No API key found. Please add your API key in Settings.")
+            return;
+        }
+
         try{
-            const titleResponse = await getModelResponse(introMessages);
+            const titleResponse = await getModelResponse(introMessages, apiKey);
 
             if (titleResponse) {
                 updateConversationTitle(titleResponse.trim());
@@ -111,6 +120,11 @@ export default function Chat() {
     const sendMessage = async (text: string) => {
         if (!text.trim()) return;
 
+        if (!apiKey) {
+            toast.error("No API key found. Please add your API key in Settings.")
+            return;
+        }
+
         const userMessage: Message = {
             id: uuidv4(),
             role: "user",
@@ -122,13 +136,13 @@ export default function Chat() {
             createNewConversation();
         }
 
-        if(messages.length === 0){
-            await generateChatTitle(userMessage.content);
-        }
-
         // Add user message to conversation (persistent)
         addMessageToConversation(userMessage);
         setLocalMessages((prevMessages) => [...prevMessages, userMessage])
+
+        if(messages.length === 0){
+            await generateChatTitle(userMessage.content);
+        }
 
         setIsLoading(true);
         stoppedRef.current = false;
@@ -151,7 +165,7 @@ export default function Chat() {
 
         let streamedContent = "";
         try{
-            for await (const chunk of streamModelResponse([...messages, userMessage])) {
+            for await (const chunk of streamModelResponse([...messages, userMessage], apiKey)) {
                 if (stoppedRef.current) {
                     break;
                 }
@@ -198,7 +212,12 @@ export default function Chat() {
               ? { assistantMessage: msg.content, existingGraph: strippedGraph }
               : { assistantMessage: msg.content };
 
-            const response = await generateGraphFromMessage(requestBody);
+            if (!apiKey) {
+                toast.error("No API key found. Please add your API key in Settings.")
+                return;
+            }
+
+            const response = await generateGraphFromMessage(requestBody, apiKey);
 
             if (!response){
                 console.log("error");
@@ -382,6 +401,7 @@ export default function Chat() {
                                 key={index}
                                 className="p-2 border border-gray-300 rounded-lg text-left hover:bg-gray-100 transition"
                                 onClick={() => sendMessage(prompt.sample_prompt)}
+                                disabled={isLoading}
                             >
                                 <p className="text-gray-600 text-sm">{prompt.sample_prompt}</p>
                             </button>

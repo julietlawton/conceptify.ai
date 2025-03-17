@@ -1,16 +1,19 @@
 "use client"
-
 import { useState, useEffect, useCallback } from "react"
 import Chat from "./components/chat"
 import SideNav from "@/app/components/side-nav";
 import NetworkGraph from "./components/network-graph"
 import { Button } from "@/components/ui/button"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Bars3Icon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
 import { useChat } from "./context/ChatContext";
+import { useApiKey } from "./context/APIContext";
 import { GraphIcon } from "./ui/icons";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import FeedbackDialog from "./components/feedback-dialog";
+import { Input } from "@/components/ui/input";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
@@ -19,6 +22,12 @@ export default function Home() {
   const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
   const [isSendFeedbackOpen, setIsSendFeedbackOpen] = useState(false)
   const { currentConversationId, conversations, coldStartGraph } = useChat();
+  const { passphrase, setPassphrase, decryptApiKey } = useApiKey();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+
+  const [passwordInput, setPasswordInput] = useState("");
+  const [invalidPassword, setInvalidPassword] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
   const graphData = currentConversationId ? conversations[currentConversationId]?.graphData || null : null;
   const [graphVisible, setGraphVisible] = useState(true);
@@ -26,6 +35,15 @@ export default function Home() {
   const handleResize = useCallback(() => {
     window.dispatchEvent(new Event("resize"))
   }, [])
+
+  useEffect(() => {
+    const storedKey = localStorage.getItem("apiKey");
+    const encrypted = localStorage.getItem("isApiKeyEncrypted") === "true";
+
+    if (storedKey && encrypted && !passphrase) {
+      setShowPasswordDialog(true);
+    }
+  }, [passphrase]);
 
   useEffect(() => {
     if (isVisualizerOpen || isGraphFullScreen) {
@@ -62,6 +80,30 @@ export default function Home() {
     );
   }
 
+  const handleUnlock = () => {
+    setIsUnlocking(true);
+    setPassphrase(passwordInput);
+    const success = decryptApiKey(passwordInput.trim());
+    console.log(success)
+
+    setTimeout(() => {
+      if (!success) {
+        setInvalidPassword(true);
+        setPassphrase(null);
+      }
+      setIsUnlocking(false);
+      setShowPasswordDialog(false);
+    }, 150);
+  };
+
+
+  // Forgot password clears key
+  const handleForgotPassword = () => {
+    localStorage.removeItem("apiKey");
+    localStorage.setItem("isApiKeyEncrypted", "false");
+    window.location.reload();
+  };
+
 
   return (
     <main className="flex h-screen overflow-hidden">
@@ -70,6 +112,47 @@ export default function Home() {
       <div className={`flex-grow transition-all duration-300 ease-in-out ${isVisualizerOpen && !isGraphFullScreen ? "w-1/2" : "w-full"}`} onTransitionEnd={() => setGraphVisible(true)}>
         <div className="relative h-full">
           <Chat />
+          <Dialog open={showPasswordDialog}>
+          <DialogContent className="[&>button]:hidden">
+              <DialogHeader>
+                <DialogTitle>Enter Password</DialogTitle>
+                <DialogDescription>Enter your password to unlock your API key.</DialogDescription>
+              </DialogHeader>
+              <div className="p-4 space-y-2">
+                <Input
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    setInvalidPassword(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !isUnlocking && passwordInput.trim() !== "") {
+                      handleUnlock();
+                    }
+                  }}
+                  placeholder="Password"
+                  type="password"
+                  disabled={isUnlocking}
+                />
+                {invalidPassword && (
+                  <p className="text-sm text-red-500 pl-2">Incorrect password. Please try again.</p>
+                )}
+              </div>
+
+              <DialogFooter className="flex justify-between items-center mt-2 gap-1">
+                <button
+                  className="text-sm text-gray-500 underline hover:text-black transition"
+                  onClick={handleForgotPassword}
+                >
+                  Forgot Password?
+                </button>
+
+                <Button onClick={handleUnlock} disabled={isUnlocking || passwordInput.trim() === ""}>
+                  {isUnlocking ? "Unlocking..." : "Unlock"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {!isGraphFullScreen && (
             <TooltipProvider>

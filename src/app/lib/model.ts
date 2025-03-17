@@ -2,10 +2,9 @@ import { Message } from "ai";
 import { KnowledgeGraph } from "./types";
 import { MODEL_PROVIDERS } from "./modelConfig";
 
-export async function getModelResponse(messages: Message[]) {
+export async function getModelResponse(messages: Message[], apiKey: string) {
   const selectedProvider = localStorage.getItem("selectedProvider");
   const selectedChatModel = localStorage.getItem("selectedChatModel");
-  const apiKey = localStorage.getItem("apiKey");
 
   const response = await fetch("/api/chat", {
     method: "POST",
@@ -27,10 +26,9 @@ export async function getModelResponse(messages: Message[]) {
 
 }
 
-export async function* streamModelResponse(messages: Message[]) {
+export async function* streamModelResponse(messages: Message[], apiKey: string) {
   const selectedProvider = localStorage.getItem("selectedProvider");
   const selectedChatModel = localStorage.getItem("selectedChatModel");
-  const apiKey = localStorage.getItem("apiKey");
 
   try {
     const response = await fetch("/api/chat", {
@@ -68,7 +66,8 @@ export async function* streamModelResponse(messages: Message[]) {
       if (parsed.error) {
         throw new Error(parsed.error);
       }
-    } catch (parseError) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_) {
       // If parsing fails, assume the chunk is normal text.
       // (If the first chunk isn’t valid JSON, it's likely a regular message.)
     }
@@ -98,10 +97,9 @@ export async function generateGraphFromMessage(requestBody: {
     nodes: string[];
     links: { source: string; target: string; label: string }[];
   };
-}) {
+}, apiKey: string) {
     const selectedProvider = localStorage.getItem("selectedProvider");
     const selectedGraphModel = MODEL_PROVIDERS[selectedProvider as keyof typeof MODEL_PROVIDERS].graphModel;
-    const apiKey = localStorage.getItem("apiKey");
 
     const response = await fetch("/api/graph/generate", {
       method: "POST",

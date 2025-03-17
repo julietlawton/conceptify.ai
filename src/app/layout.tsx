@@ -4,6 +4,7 @@ import "./globals.css";
 import { ChatProvider } from "./context/ChatContext";
 import { Toaster } from "react-hot-toast";
 import { Analytics } from '@vercel/analytics/next';
+import { ApiKeyProvider } from "./context/APIContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,9 +27,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ChatProvider>
-          {children}
-        </ChatProvider>
+        <ApiKeyProvider>
+          <ChatProvider>
+            {children}
+          </ChatProvider>
+        </ApiKeyProvider>
         <Toaster position="top-center" />
         <Analytics />
       </body>
