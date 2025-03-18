@@ -14,6 +14,7 @@ import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 import FeedbackDialog from "./components/feedback-dialog";
 import { Input } from "@/components/ui/input";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { TutorialSplash } from "./components/tutorial-splash";
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
@@ -31,6 +32,8 @@ export default function Home() {
 
   const graphData = currentConversationId ? conversations[currentConversationId]?.graphData || null : null;
   const [graphVisible, setGraphVisible] = useState(true);
+
+  const [showTutorial, setShowTutorial] = useState(false)
 
   const handleResize = useCallback(() => {
     window.dispatchEvent(new Event("resize"))
@@ -71,13 +74,16 @@ export default function Home() {
     return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
-  if (isMobile) {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 h-screen text-center bg-gray-500 text-white font-bold mt-[-50px]">
-        <ExclamationCircleIcon className="w-14 h-14 text-white mb-4" />
-        <p className="text-xl">Hey there! This app was designed for bigger screens - come back on a desktop or tablet.</p>
-      </div>
-    );
+  useEffect(() => {
+    const hasSeenTutorial = localStorage.getItem("hasSeenTutorial")
+    if (!hasSeenTutorial || hasSeenTutorial === "false") {
+      setShowTutorial(true);
+    }
+  }, [])
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false)
+    localStorage.setItem("hasSeenTutorial", "true")
   }
 
   const handleUnlock = () => {
@@ -96,13 +102,21 @@ export default function Home() {
     }, 150);
   };
 
-
-  // Forgot password clears key
   const handleForgotPassword = () => {
     localStorage.removeItem("apiKey");
     localStorage.setItem("isApiKeyEncrypted", "false");
+    localStorage.setItem("openSettingsOnLoad", "true");
     window.location.reload();
   };
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col items-center justify-center p-8 h-screen text-center bg-gray-500 text-white font-bold mt-[-50px]">
+        <ExclamationCircleIcon className="w-14 h-14 text-white mb-4" />
+        <p className="text-xl">Hey there! This app was designed for bigger screens - come back on a desktop or tablet.</p>
+      </div>
+    );
+  }
 
 
   return (
@@ -112,8 +126,9 @@ export default function Home() {
       <div className={`flex-grow transition-all duration-300 ease-in-out ${isVisualizerOpen && !isGraphFullScreen ? "w-1/2" : "w-full"}`} onTransitionEnd={() => setGraphVisible(true)}>
         <div className="relative h-full">
           <Chat />
+          {showTutorial && <TutorialSplash onClose={handleCloseTutorial} />}
           <Dialog open={showPasswordDialog}>
-          <DialogContent className="[&>button]:hidden">
+            <DialogContent className="[&>button]:hidden">
               <DialogHeader>
                 <DialogTitle>Enter Password</DialogTitle>
                 <DialogDescription>Enter your password to unlock your API key.</DialogDescription>
@@ -186,7 +201,7 @@ export default function Home() {
                     <span className="sr-only">Toggle Visualizer</span>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom" align="center">Toggle Graph</TooltipContent>
+                <TooltipContent side="bottom" align="center">Toggle Concept Map</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           )}
@@ -212,11 +227,9 @@ export default function Home() {
                 <div className="absolute top-[32%] left-1/2 transform -translate-x-1/2 p-10 border border-gray-200 rounded-xl shadow-sm bg-white text-gray-500 text-lg space-y-3 text-center">
                   <GraphIcon className="w-12 h-12 text-gray-500 mx-auto" />
                   <p className="font-medium">Nothing here yet</p>
-                  <p className="text-sm text-gray-400 pb-1">Start chatting to get started, or create an empty graph.</p>
+                  <p className="text-sm text-gray-400 pb-1">Start chatting to get started, or create an empty concept map.</p>
                   <button
-                    className="px-4 py-2 text-sm text-white rounded-md 
-                      bg-gradient-to-r from-gray-500 to-gray-500
-                      hover:from-purple-500 hover:to-blue-500 transition"
+                    className="px-4 py-2 text-sm text-white rounded-md bg-gray-500 hover:bg-black"
                     onClick={() => {
                       if (currentConversationId) {
                         coldStartGraph(currentConversationId);
@@ -225,7 +238,7 @@ export default function Home() {
                       }
                     }}
                   >
-                    Create Empty Graph
+                    Create Empty Concept Map
                   </button>
                 </div>
               </div>

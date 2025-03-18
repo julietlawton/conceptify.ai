@@ -161,7 +161,7 @@ export function ChatBubble({
                                 ) : (
                                     <>
                                         <ArrowRightEndOnRectangleIcon className="w-4 h-4" />
-                                        <span>Add to graph</span>
+                                        <span>Add to Concept Map</span>
                                     </>
                                 )}
                             </button>

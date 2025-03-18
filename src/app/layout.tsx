@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LLM Concept Map",
-  description: "App for generating concept maps.",
+  title: "Conceptify.AI",
+  description: "App for generating concept maps from conversations with LLMs.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

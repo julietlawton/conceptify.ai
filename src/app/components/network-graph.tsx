@@ -688,7 +688,7 @@ export default function NetworkGraph({
                         <DialogTitle>{dialogMode === "add" ? "Add New Node" : "Edit Node"}</DialogTitle>
                         <DialogDescription>
                             {dialogMode === "add"
-                                ? "Create a new node in the graph."
+                                ? "Create a new node in the concept map."
                                 : "Edit the selected node."}
                         </DialogDescription>
                     </DialogHeader>

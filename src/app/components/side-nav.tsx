@@ -4,10 +4,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/solid';
 import { Cog8ToothIcon } from '@heroicons/react/24/outline';
 import { useChat } from "../context/ChatContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import SettingsDialog from "./settings-dialog";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 export default function SideNav() {
     const {
@@ -56,6 +57,14 @@ export default function SideNav() {
         setIsRenameDialogOpen(false);
         setEditingChatId(null);
     };
+
+    useEffect(() => {
+        const shouldOpenSettings = localStorage.getItem("openSettingsOnLoad") === "true";
+        if (shouldOpenSettings) {
+          setIsSettingsOpen(true);
+          localStorage.removeItem("openSettingsOnLoad");
+        }
+      }, []);
 
     return (
         <div className="w-64 min-64 flex h-full flex-col bg-gray-100 border-r border-gray-200">
@@ -149,6 +158,7 @@ export default function SideNav() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Chat Name</DialogTitle>
+                        <DialogDescription className="text-sm text-gray-500">Change the name of this chat.</DialogDescription>
                     </DialogHeader>
                     <div className="p-4">
                         <Input

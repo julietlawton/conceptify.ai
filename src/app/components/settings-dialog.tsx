@@ -184,7 +184,7 @@ export default function SettingsDialog({
                                 <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 -translate-y-1/4" />
                                 <div className="absolute left-1/2 w-[200px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
                                     <p>Select the model provider for the app.</p><br></br>
-                                    <p>OpenAI is recommended for the most consistent graph generation.</p>
+                                    <p>OpenAI is recommended for the most consistent concept map generation.</p>
                                 </div>
                             </div>
                         </div>
@@ -321,7 +321,7 @@ export default function SettingsDialog({
                             <div className="relative group mr-2">
                                 <InformationCircleIcon className="w-4 h-4 text-gray-500 cursor-pointer mt-2 -translate-y-1/4" />
                                 <div className="absolute left-1/2 w-[200px] -translate-x-1/2 scale-0 transition-all rounded bg-gray-800 text-white text-xs py-2 px-3 group-hover:scale-100 whitespace-normal">
-                                    <p>Export or import your data (chats + graphs) as a JSON file.</p>
+                                    <p>Export or import your data (chats + concept maps) as a JSON file.</p>
                                 </div>
                             </div>
                         </div>
@@ -348,6 +348,32 @@ export default function SettingsDialog({
                                 onChange={handleImportData}
                                 className="hidden"
                             />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4 pl-2 mt-4">
+                        <Label className="col-span-1" />
+                        <div className="col-span-3 flex flex-col space-y-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    localStorage.setItem("hasSeenTutorial", "false");
+                                    window.location.reload();
+                                }}
+                            >
+                                Show Tutorial Again
+                            </Button>
+
+                            <Button
+                                variant="destructive"
+                                onClick={() => {
+                                    if (confirm("Are you sure you want to reset the app? All data will be lost.")) {
+                                        localStorage.clear();
+                                        window.location.reload();
+                                    }
+                                }}
+                            >
+                                Reset App
+                            </Button>
                         </div>
                     </div>
 

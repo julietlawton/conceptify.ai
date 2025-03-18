@@ -17,6 +17,7 @@ import { inter } from "../ui/fonts";
 import { ColorGradientIcon } from "../ui/icons";
 import { ColorPalettes } from "../ui/color-palettes";
 import { ArrowUturnLeftIcon, ArrowUturnRightIcon } from "@heroicons/react/24/outline";
+import { DialogDescription } from "@radix-ui/react-dialog";
 
 interface GraphToolbarProps {
     onAddNode: () => void;
@@ -356,7 +357,7 @@ export function GraphToolbar({
                         className="flex items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
                         onClick={() => setIsDialogOpen(true)}
                     >
-                        <span>Delete graph</span>
+                        <span>Delete Map</span>
                     </button>
 
                 </div>
@@ -364,11 +365,12 @@ export function GraphToolbar({
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Delete Graph</DialogTitle>
+                        <DialogTitle>Delete Concept Map</DialogTitle>
+                        <DialogDescription className="text-sm text-gray-500">Delete the data for this concept map.</DialogDescription>
                     </DialogHeader>
                     <div className="p-4">
                         <p className="text-md text-black">
-                            Are you sure you want to delete this graph? This action can&apos;t be undone.
+                            Are you sure you want to delete this concept map? This action can&apos;t be undone.
                         </p>
                     </div>
                     <DialogFooter className="flex justify-end space-x-2">
