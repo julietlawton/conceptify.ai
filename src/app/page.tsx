@@ -209,7 +209,7 @@ export default function Home() {
       </div>
 
       <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden border 
+        className={`transition-all duration-600 ease-in-out overflow-hidden border 
           ${isGraphFullScreen ? "fixed inset-0 bg-white z-50" : isVisualizerOpen ? "w-1/2 opacity-100" : "w-0 opacity-0"}`}
       >
         {isVisualizerOpen && graphData ? (

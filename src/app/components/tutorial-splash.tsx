@@ -23,11 +23,11 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         Conceptify.AI lets you build interactive concept maps from your conversations with AI assistants.
                     </p>
                     <p>This tutorial will guide you through the main features of the app.</p><br></br>
-                    {/* <img
-                        src="/gifs/intro_optimized.gif"
+                    <img
+                        src="/gifs/intro.gif"
                         alt="Tutorial Intro"
-                        className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                 </div>
             ),
         },
@@ -44,11 +44,11 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                     <p>
                         <strong>Settings Menu:</strong> The settings menu is located at the bottom of the side bar.
                     </p>
-                    {/* <img
-                        src="/gifs/appnav_optimized.gif"
+                    <img
+                        src="/gifs/appnav.gif"
                         alt="Navigating the App"
-                        className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                 </div>
             ),
         },
@@ -63,21 +63,16 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         <li>
                             <strong>Add a message to the concept map:</strong> After sending a message, click &quot;Add to Concept Map&quot; to extract concepts from that message.
                             If the chat doesn&quot;’t have a concept map yet, one will be created automatically; otherwise, the new concepts will be added to the existing map.
-                        </li><br></br>
-                        {/* <img
-                            src="/gifs/intro_optimized.gif"
-                            alt="Tutorial Intro"
-                            className="w-full max-w-md mx-auto rounded shadow-md"
-                        /><br></br> */}
+                        </li>
                         <li>
                             <strong>Create an empty concept map:</strong> To create an empty concept map, click the &quot;Create Empty Concept Map&quot; button. 
                             Use this option if you want to begin building a concept map from scratch.
                             </li><br></br>
-                        {/* <img
-                            src="/gifs/intro_optimized.gif"
-                            alt="Tutorial Intro"
-                            className="w-full max-w-md mx-auto rounded shadow-md"
-                        /> */}
+                        <img
+                            src="/gifs/creatingconceptmap.gif"
+                            alt="Creating a Concept Map"
+                            className="w-full max-w-xl mx-auto rounded shadow-md"
+                        />
                     </ul>
                 </div>
             ),
@@ -93,16 +88,16 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         <strong>Zoom:</strong> Pinch (touchpad) or use the mouse wheel (mouse) to zoom in and out.
                     </p>
                     <p>
-                        <strong>Drag Nodes:</strong> Click and drag on any node to reposition it.
+                        <strong>Drag Nodes:</strong> Click and drag on any node to reposition it. Drag and hold to freeze a node, release to reset.
                     </p>
                     <p>
-                        <strong>View Node Info:</strong> Hover over a node to see its detailed information.
+                        <strong>View Node Info:</strong> Hover over a node to see its detailed information. Stop hovering to dismiss the card.
                     </p>
-                    {/* <img
-                        src="/gifs/intro_optimized.gif"
-                        alt="Tutorial Intro"
-                        className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                    <img
+                        src="/gifs/graphnav.gif"
+                        alt="Concept Map Navigation"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                 </div>
             ),
         },
@@ -113,36 +108,36 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                     <p>
                         <strong>Adding and Editing Nodes:</strong> Click the + button in the toolbar to add a new node to the concept map or click the pencil button to edit an existing node. 
                         To delete a node, click the trashcan button. A node must be selected (by clicking on it) before you can edit or delete it. Up to three actions (add, edit, delete node) can be undone/redone.
-                    </p><br></br>
-                    {/* <img
-                        src="/gifs/intro_optimized.gif"
-                        alt="Tutorial Intro"
-                        className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                    </p>
+                    <img
+                        src="/gifs/addedit.gif"
+                        alt="Add Edit Delete"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                     <p>
                         <strong>Fullscreen and Reset View:</strong> Click the fullscreen button to put the concept map in fullscreen. Click the reset view button to fit the concept map to the concep map window.
-                    </p><br></br>
-                    {/* <img
-                        src="/gifs/intro_optimized.gif"
-                        alt="Tutorial Intro"
-                        className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                    </p>
+                    <img
+                        src="/gifs/fullscreen.gif"
+                        alt="Fullscreen"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                     <p>
                         <strong>Search:</strong> To search for a node, enter its name in the search bar. Selecting a node in the search results will jump to its position.
-                    </p><br></br>
-                    {/* <img
-                        src="/gifs/intro_optimized.gif"
-                        alt="Tutorial Intro"
-                        className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                    </p>
+                    <img
+                        src="/gifs/nodesearch.gif"
+                        alt="Node Search"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                     <p>
                         <strong>Color Palette Selection:</strong> Use the color palette picker to change the color palette for the concept map.
-                    </p><br></br>
-                    {/* <img
-                        src="/gifs/intro_optimized.gif"
-                        alt="Tutorial Intro"
-                        className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                    </p>
+                    <img
+                        src="/gifs/colorselection.gif"
+                        alt="Color Selection"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                 </div>
             ),
         },
@@ -158,11 +153,11 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                     <p>
                         Since your data is stored locally, it is recommended to save your data regularly by exporting it to avoid losing it when your browser updates or clears.
                     </p>
-                    {/* <img
-                        src="/gifs/intro_optimized.gif"
-                        alt="Tutorial Intro"
+                    <img
+                        src="/settings.png"
+                        alt="Settings Screenshot"
                         className="w-full max-w-md mx-auto rounded shadow-md"
-                    /> */}
+                    />
                 </div>
             ),
         },
