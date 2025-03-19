@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import SettingsDialog from "./settings-dialog";
 import { DialogDescription } from "@radix-ui/react-dialog";
+import { useApiKey } from "../context/APIContext";
 
 export default function SideNav() {
     const {
@@ -20,6 +21,8 @@ export default function SideNav() {
         switchConversation,
         getLastMessageTime
     } = useChat();
+
+    const { isDemoActive, demoUsesRemaining } = useApiKey();
 
     const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
     const [newChatName, setNewChatName] = useState("");
@@ -61,10 +64,10 @@ export default function SideNav() {
     useEffect(() => {
         const shouldOpenSettings = localStorage.getItem("openSettingsOnLoad") === "true";
         if (shouldOpenSettings) {
-          setIsSettingsOpen(true);
-          localStorage.removeItem("openSettingsOnLoad");
+            setIsSettingsOpen(true);
+            localStorage.removeItem("openSettingsOnLoad");
         }
-      }, []);
+    }, []);
 
     return (
         <div className="w-64 min-64 flex h-full flex-col bg-gray-100 border-r border-gray-200">
@@ -144,6 +147,12 @@ export default function SideNav() {
             </div>
             <div className="flex-grow"></div>
 
+            {isDemoActive && (
+                <div className="text-md text-gray-500 text-center px-6 py-2 mb-6">
+                    Demo is active. You have {demoUsesRemaining} action{demoUsesRemaining !== 1 ? "s" : ""} remaining.
+                </div>
+            )}
+
             <div className="border-t">
                 <button
                     onClick={() => setIsSettingsOpen(true)}
@@ -172,7 +181,7 @@ export default function SideNav() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-            <SettingsDialog isSettingsOpen={isSettingsOpen} setIsSettingsOpen={setIsSettingsOpen}/>
+            <SettingsDialog isSettingsOpen={isSettingsOpen} setIsSettingsOpen={setIsSettingsOpen} />
         </div>
     );
 }

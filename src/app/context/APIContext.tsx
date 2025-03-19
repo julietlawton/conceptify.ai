@@ -1,6 +1,7 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import CryptoJS from "crypto-js";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 interface ApiKeyContextType {
     apiKey: string | null;
@@ -10,6 +11,10 @@ interface ApiKeyContextType {
     passphrase: string | null;
     setPassphrase: (phrase: string | null) => void;
     decryptApiKey: (passphrase: string) => boolean;
+    isDemoActive: boolean;
+    demoUsesRemaining: number;
+    setDemoUsesRemaining: (usesRemaining: number) => void;
+    userFingerprint: string | null;
 }
 
 const ApiKeyContext = createContext<ApiKeyContextType | undefined>(undefined);
@@ -18,6 +23,10 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
     const [apiKey, _setApiKey] = useState<string | null>(null);
     const [isApiKeyEncrypted, setIsApiKeyEncrypted] = useState<boolean>(false);
     const [passphrase, setPassphrase] = useState<string | null>(null);
+    const [isDemoActive, setIsDemoActive] = useState<boolean>(false);
+    const [demoUsesRemaining, setDemoUsesRemaining] = useState<number>(0);
+    const [userFingerprint, setUserFingerprint] = useState<string | null>(null);
+    const hasCheckedFingerprint = useRef(false);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -33,6 +42,52 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             }
         }
+    }, []);
+
+    useEffect(() => {
+        if (demoUsesRemaining === 0) {
+            setIsDemoActive(false);
+        }
+    }, [demoUsesRemaining]);
+
+    useEffect(() => {
+        if (hasCheckedFingerprint.current) return;
+
+        async function checkDemoUsage() {
+            try {
+                const fp = await FingerprintJS.load();
+                const result = await fp.get();
+                const fingerprint = result.visitorId;
+                setUserFingerprint(fingerprint);
+
+                const res = await fetch("/api/fingerprint/check", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ fingerprintId: fingerprint }),
+                });
+
+                const data = await res.json();
+                const usageCount = data.usage;
+
+                const maxDemoUses = 5;
+                const remaining = Math.max(0, maxDemoUses - usageCount);
+
+                if (remaining > 0 && !apiKey) {
+                    setIsDemoActive(true);
+                    setDemoUsesRemaining(remaining);
+                } else {
+                    setIsDemoActive(false);
+                    setDemoUsesRemaining(0);
+                }
+                hasCheckedFingerprint.current = true;
+            } catch (err) {
+                console.error("Demo usage check failed:", err);
+                setIsDemoActive(false);
+            }
+        }
+
+        checkDemoUsage();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const decryptApiKey = (passphrase: string): boolean => {
@@ -64,6 +119,8 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
             return;
         }
 
+        setIsDemoActive(false);
+
         if (encrypt && passphrase) {
             if (!key) {
                 console.error("Attempted to encrypt a null or empty key!");
@@ -90,7 +147,11 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
             setIsApiKeyEncrypted,
             passphrase,
             setPassphrase,
-            decryptApiKey
+            decryptApiKey,
+            isDemoActive,
+            demoUsesRemaining,
+            setDemoUsesRemaining,
+            userFingerprint
         }}>
             {children}
         </ApiKeyContext.Provider>

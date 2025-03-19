@@ -25,7 +25,7 @@ export default function Chat() {
         addActionToUndoStack
     } = useChat();
 
-    const { apiKey } = useApiKey();
+    const { apiKey, isDemoActive, userFingerprint, setDemoUsesRemaining } = useApiKey();
 
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
@@ -97,30 +97,30 @@ export default function Chat() {
             }
         ];
 
-        if (!apiKey) {
+        if (!apiKey && !isDemoActive) {
             toast.error("No API key found. Please add your API key in Settings.")
             return;
         }
 
-        try{
-            const titleResponse = await getModelResponse(introMessages, apiKey);
+        try {
+            const titleResponse = await getModelResponse(introMessages, isDemoActive, apiKey);
 
             if (titleResponse) {
                 updateConversationTitle(titleResponse.trim());
             }
-        } catch(error){
+        } catch (error) {
             console.error("Error generating chat title:", error);
 
             const errMsg = error instanceof Error ? error.message : "Unknown error.";
             toast.error(errMsg);
         }
-        
+
     };
 
     const sendMessage = async (text: string) => {
         if (!text.trim()) return;
 
-        if (!apiKey) {
+        if (!apiKey && !isDemoActive) {
             toast.error("No API key found. Please add your API key in Settings.")
             return;
         }
@@ -140,7 +140,7 @@ export default function Chat() {
         addMessageToConversation(userMessage);
         setLocalMessages((prevMessages) => [...prevMessages, userMessage])
 
-        if(messages.length === 0){
+        if (messages.length === 0) {
             await generateChatTitle(userMessage.content);
         }
 
@@ -164,8 +164,8 @@ export default function Chat() {
         setLocalMessages((prevMessages) => [...prevMessages, assistantMessage]);
 
         let streamedContent = "";
-        try{
-            for await (const chunk of streamModelResponse([...messages, userMessage], apiKey)) {
+        try {
+            for await (const chunk of streamModelResponse([...messages, userMessage], isDemoActive, apiKey)) {
                 if (stoppedRef.current) {
                     break;
                 }
@@ -181,13 +181,28 @@ export default function Chat() {
                 });
             }
             addMessageToConversation({ ...assistantMessage, content: streamedContent });
-        }catch(error){
+        } catch (error) {
             console.error("Error sending message:", error);
             const errMsg = error instanceof Error ? error.message : "Unknown error.";
             toast.error(errMsg);
-        }finally{
+        } finally {
             setStreamingMessageId(null);
             setIsLoading(false);
+            if (isDemoActive) {
+                try {
+                    const res = await fetch("/api/fingerprint/increment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ fingerprintId: userFingerprint }),
+                    });
+
+                    const data = await res.json();
+                    setDemoUsesRemaining(Math.max(0, 5 - data.usage));
+                } catch (err) {
+                    console.error("Failed to increment demo usage:", err);
+                }
+            }
+
         }
     };
 
@@ -208,23 +223,21 @@ export default function Chat() {
                 : null;
 
             const requestBody =
-            strippedGraph !== null && strippedGraph.nodes.length !== 0
-              ? { assistantMessage: msg.content, existingGraph: strippedGraph }
-              : { assistantMessage: msg.content };
+                strippedGraph !== null && strippedGraph.nodes.length !== 0
+                    ? { assistantMessage: msg.content, existingGraph: strippedGraph }
+                    : { assistantMessage: msg.content };
 
-            if (!apiKey) {
+            if (!apiKey && !isDemoActive) {
                 toast.error("No API key found. Please add your API key in Settings.")
                 return;
             }
 
-            const response = await generateGraphFromMessage(requestBody, apiKey);
+            const response = await generateGraphFromMessage(requestBody, isDemoActive, apiKey);
 
-            if (!response){
-                console.log("error");
+            if (!response) {
                 return;
             }
             const newGraphData: KnowledgeGraph = response;
-            console.log("Data returned from model:", newGraphData);
 
             // Convert nodes into correct format with unique IDs
             const newNodes = newGraphData.nodes.map((node: GraphNode) => ({
@@ -307,6 +320,21 @@ export default function Chat() {
             // Now update the conversation's graph using the context's updater
             if (currentConversationId) {
                 updateConversationGraphData(currentConversationId, mergedGraph);
+            }
+
+            if (isDemoActive) {
+                try {
+                    const res = await fetch("/api/fingerprint/increment", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ fingerprintId: userFingerprint }),
+                    });
+
+                    const data = await res.json();
+                    setDemoUsesRemaining(Math.max(0, 5 - data.usage));
+                } catch (err) {
+                    console.error("Failed to increment demo usage:", err);
+                }
             }
 
         } catch (error) {
@@ -394,8 +422,8 @@ export default function Chat() {
                     <div className="grid grid-cols-3 gap-2 max-w-3xl mx-auto pb-2 px-4">
                         {[
                             { sample_prompt: "How does quantum computing work?" },
-                            { sample_prompt: "Explain Like I'm 5: Machine Learning" },
-                            { sample_prompt: "How do I reverse a list in Python?" },
+                            { sample_prompt: "Show me how to reverse a list in Python." },
+                            { sample_prompt: "Which cultures have vampire myths?" },
                         ].map((prompt, index) => (
                             <button
                                 key={index}

@@ -7,22 +7,35 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { messages, stream, selectedProvider, selectedChatModel, apiKey }:
-            { messages: Message[]; stream?: boolean; selectedProvider: string; selectedChatModel: string; apiKey: string }
+        const { messages, stream, selectedProvider, selectedChatModel, isDemoActive, apiKey }:
+            { messages: Message[]; stream?: boolean; selectedProvider: string; selectedChatModel: string; isDemoActive: boolean; apiKey: string | null }
             = await req.json();
 
         let modelFunction;
-        if (selectedProvider === "openai") {
-            process.env.OPENAI_API_KEY = apiKey;
-            modelFunction = openai(selectedChatModel);
-        } else if (selectedProvider === "anthropic") {
-            process.env.ANTHROPIC_API_KEY = apiKey;
-            modelFunction = anthropic(selectedChatModel);
-        } else {
-            return new NextResponse(JSON.stringify({ error: "Invalid provider." }), {
-                status: 400,
-                headers: { "Content-Type": "application/json" },
-            });
+        if (isDemoActive) {
+            modelFunction = openai("gpt-4o");
+        }
+        else {
+            if (!apiKey) {
+                return new NextResponse(JSON.stringify({ error: "API key is missing." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+            if (selectedProvider === "openai") {
+                process.env.OPENAI_API_KEY = apiKey;
+                modelFunction = openai(selectedChatModel);
+            }
+            else if (selectedProvider === "anthropic") {
+                process.env.ANTHROPIC_API_KEY = apiKey;
+                modelFunction = anthropic(selectedChatModel);
+            }
+            else {
+                return new NextResponse(JSON.stringify({ error: "Invalid provider." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
         }
 
         if (stream) {
@@ -59,8 +72,6 @@ export async function POST(req: Request) {
             else if (status === 429) message = "Rate limit exceeded.";
             else if (status === 400) message = "Bad request.";
             else if (status && status >= 500) message = "Server error.";
-
-            console.log("route.ts", message)
 
             return new NextResponse(JSON.stringify({ error: message }), {
                 status,

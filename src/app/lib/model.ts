@@ -2,20 +2,26 @@ import { Message } from "ai";
 import { KnowledgeGraph } from "./types";
 import { MODEL_PROVIDERS } from "./modelConfig";
 
-export async function getModelResponse(messages: Message[], apiKey: string) {
+export async function getModelResponse(messages: Message[], isDemoActive: boolean, apiKey: string | null) {
   const selectedProvider = localStorage.getItem("selectedProvider");
   const selectedChatModel = localStorage.getItem("selectedChatModel");
 
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages, stream: false, selectedProvider, selectedChatModel, apiKey }),
+    body: JSON.stringify({
+      messages,
+      stream: false,
+      selectedProvider,
+      selectedChatModel,
+      isDemoActive: isDemoActive,
+      apiKey: isDemoActive ? null : apiKey
+    }),
   });
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const errorMsg = body?.error || `Unexpected error: ${response.status}`;
-    console.log("getModelResponse", body)
     throw new Error(errorMsg);
   }
 
@@ -26,7 +32,7 @@ export async function getModelResponse(messages: Message[], apiKey: string) {
 
 }
 
-export async function* streamModelResponse(messages: Message[], apiKey: string) {
+export async function* streamModelResponse(messages: Message[], isDemoActive: boolean, apiKey: string | null) {
   const selectedProvider = localStorage.getItem("selectedProvider");
   const selectedChatModel = localStorage.getItem("selectedChatModel");
 
@@ -34,7 +40,14 @@ export async function* streamModelResponse(messages: Message[], apiKey: string) 
     const response = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages, stream: true, selectedProvider, selectedChatModel, apiKey }),
+      body: JSON.stringify({
+        messages,
+        stream: true,
+        selectedProvider,
+        selectedChatModel,
+        isDemoActive: isDemoActive,
+        apiKey: isDemoActive ? null : apiKey
+      }),
     });
 
 
@@ -66,7 +79,7 @@ export async function* streamModelResponse(messages: Message[], apiKey: string) 
       if (parsed.error) {
         throw new Error(parsed.error);
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_) {
       // If parsing fails, assume the chunk is normal text.
       // (If the first chunk isn’t valid JSON, it's likely a regular message.)
@@ -97,25 +110,38 @@ export async function generateGraphFromMessage(requestBody: {
     nodes: string[];
     links: { source: string; target: string; label: string }[];
   };
-}, apiKey: string) {
-    const selectedProvider = localStorage.getItem("selectedProvider");
-    const selectedGraphModel = MODEL_PROVIDERS[selectedProvider as keyof typeof MODEL_PROVIDERS].graphModel;
+}, isDemoActive: boolean, apiKey: string | null) {
+  const selectedProvider = localStorage.getItem("selectedProvider");
 
-    const response = await fetch("/api/graph/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ ...requestBody, selectedProvider, selectedGraphModel, apiKey }),
-    });
+  let selectedGraphModel;
+  if (!isDemoActive) {
+    selectedGraphModel = MODEL_PROVIDERS[selectedProvider as keyof typeof MODEL_PROVIDERS].graphModel;
+  }
+  else {
+    selectedGraphModel = MODEL_PROVIDERS["openai"].graphModel;
+  }
 
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      const errorMsg = body?.error || `Unexpected error: ${response.status}`;
-      throw new Error(errorMsg);
-    }
+  const response = await fetch("/api/graph/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...requestBody,
+      selectedProvider,
+      selectedGraphModel,
+      isDemoActive: isDemoActive,
+      apiKey: isDemoActive ? null : apiKey
+    }),
+  });
 
-    const newGraphData: KnowledgeGraph = await response.json();
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const errorMsg = body?.error || `Unexpected error: ${response.status}`;
+    throw new Error(errorMsg);
+  }
 
-    return newGraphData;
+  const newGraphData: KnowledgeGraph = await response.json();
+
+  return newGraphData;
 }

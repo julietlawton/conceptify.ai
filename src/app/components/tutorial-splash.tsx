@@ -62,7 +62,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                     <ul className="list-disc pl-6">
                         <li>
                             <strong>Add a message to the concept map:</strong> After sending a message, click &quot;Add to Concept Map&quot; to extract concepts from that message.
-                            If the chat doesn&quot;’t have a concept map yet, one will be created automatically; otherwise, the new concepts will be added to the existing map.
+                            If the chat doesn&apos;t have a concept map yet, one will be created automatically; otherwise, the new concepts will be added to the existing map.
                         </li>
                         <li>
                             <strong>Create an empty concept map:</strong> To create an empty concept map, click the &quot;Create Empty Concept Map&quot; button. 

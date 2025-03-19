@@ -25,19 +25,35 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { assistantMessage, existingGraph, selectedProvider, selectedGraphModel, apiKey }:
-            { assistantMessage: string; existingGraph?: KnowledgeGraph; selectedProvider: string; selectedGraphModel: string; apiKey: string }
+        const { assistantMessage, existingGraph, selectedProvider, selectedGraphModel, isDemoActive, apiKey }:
+            { assistantMessage: string; existingGraph?: KnowledgeGraph; selectedProvider: string; selectedGraphModel: string; isDemoActive: boolean; apiKey: string | null }
             = await req.json();
 
         let modelFunction;
-        if (selectedProvider === "openai") {
-            process.env.OPENAI_API_KEY = apiKey;
-            modelFunction = openai(selectedGraphModel);
-        } else if (selectedProvider === "anthropic") {
-            process.env.ANTHROPIC_API_KEY = apiKey;
-            modelFunction = anthropic(selectedGraphModel);
-        } else {
-            return new NextResponse("Invalid provider.", { status: 400 });
+        if (isDemoActive) {
+            modelFunction = openai("gpt-4o");
+        }
+        else {
+            if (!apiKey) {
+                return new NextResponse(JSON.stringify({ error: "API key is missing." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+            if (selectedProvider === "openai") {
+                process.env.OPENAI_API_KEY = apiKey;
+                modelFunction = openai(selectedGraphModel);
+            }
+            else if (selectedProvider === "anthropic") {
+                process.env.ANTHROPIC_API_KEY = apiKey;
+                modelFunction = anthropic(selectedGraphModel);
+            }
+            else {
+                return new NextResponse(JSON.stringify({ error: "Invalid provider." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
         }
 
         const graph_prompt = (existingGraph && existingGraph.nodes.length > 0)
