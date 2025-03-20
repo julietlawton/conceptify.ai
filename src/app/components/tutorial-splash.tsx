@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/solid"
@@ -8,6 +8,13 @@ import { CheckCircleIcon } from "@heroicons/react/24/outline"
 
 export function TutorialSplash({ onClose }: { onClose: () => void }) {
     const [currentStep, setCurrentStep] = useState(0)
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
+        }
+    }, [currentStep]);
 
     const tutorialSteps = [
         {
@@ -20,7 +27,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
             content: (
                 <div className="space-y-4">
                     <p>
-                        Conceptify.AI lets you build interactive concept maps from your conversations with AI assistants.
+                        Conceptify.AI lets you build interactive concept maps from your conversations with AI assistants - supporting meaningful learning by making it easier to visually organize ideas and recall information.
                     </p>
                     <p>This tutorial will guide you through the main features of the app.</p><br></br>
                     <img
@@ -65,9 +72,9 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                             If the chat doesn&apos;t have a concept map yet, one will be created automatically; otherwise, the new concepts will be added to the existing map.
                         </li>
                         <li>
-                            <strong>Create an empty concept map:</strong> To create an empty concept map, click the &quot;Create Empty Concept Map&quot; button. 
+                            <strong>Create an empty concept map:</strong> To create an empty concept map, click the &quot;Create Empty Concept Map&quot; button.
                             Use this option if you want to begin building a concept map from scratch.
-                            </li><br></br>
+                        </li><br></br>
                         <img
                             src="/gifs/creatingconceptmap.gif"
                             alt="Creating a Concept Map"
@@ -91,7 +98,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         <strong>Drag Nodes:</strong> Click and drag on any node to reposition it. Drag and hold to freeze a node, release to reset.
                     </p>
                     <p>
-                        <strong>View Node Info:</strong> Hover over a node to see its detailed information. Stop hovering to dismiss the card.
+                        <strong>View Node Info:</strong> Hover over a node to see its detailed information card. Stop hovering to dismiss the card.
                     </p>
                     <img
                         src="/gifs/graphnav.gif"
@@ -106,7 +113,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
             content: (
                 <div className="space-y-4">
                     <p>
-                        <strong>Adding and Editing Nodes:</strong> Click the + button in the toolbar to add a new node to the concept map or click the pencil button to edit an existing node. 
+                        <strong>Adding and Editing Nodes:</strong> Click the + button in the toolbar to add a new node to the concept map or click the pencil button to edit an existing node.
                         To delete a node, click the trashcan button. A node must be selected (by clicking on it) before you can edit or delete it. Up to three actions (add, edit, delete node) can be undone/redone.
                     </p>
                     <img
@@ -115,7 +122,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         className="w-full max-w-xl mx-auto rounded shadow-md"
                     />
                     <p>
-                        <strong>Fullscreen and Reset View:</strong> Click the fullscreen button to put the concept map in fullscreen. Click the reset view button to fit the concept map to the concep map window.
+                        <strong>Fullscreen and Reset View:</strong> Click the fullscreen button to put the concept map in fullscreen. Click the reset view button to fit the concept map to the concept map window.
                     </p>
                     <img
                         src="/gifs/fullscreen.gif"
@@ -208,7 +215,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-2xl max-h-[75%] flex flex-col">
+            <Card className="w-full max-w-2xl max-h-[90%] flex flex-col">
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle className="text-2xl">{tutorialSteps[currentStep].title}</CardTitle>
@@ -220,10 +227,14 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                 </CardHeader>
 
                 <div className="relative flex-1 overflow-hidden">
-                    <CardContent className="overflow-y-auto px-6 space-y-4 h-full pr-2 mr-2" style={{ maxHeight: "calc(75vh - 150px)" }}>
+                    <CardContent
+                        ref={scrollContainerRef}
+                        className="overflow-y-auto px-6 space-y-4 h-full pr-2 mr-2"
+                        style={{ maxHeight: "calc(90vh - 150px)" }}>
                         {tutorialSteps[currentStep].content}
                     </CardContent>
-                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-white to-transparent" />
+                    <div className="pointer-events-none absolute top-0 left-0 right-0 h-2 bg-gradient-to-b from-white to-transparent mr-6" />
+                    <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-white to-transparent" />
                 </div>
 
                 <CardFooter className="flex justify-between mt-auto px-6 pb-4">

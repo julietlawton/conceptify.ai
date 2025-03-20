@@ -535,9 +535,24 @@ export default function NetworkGraph({
     };
 
     const handleSearchSelect = (node: UIGraphNode) => {
-        // Zoom to the node
         if (forceGraphRef.current && node) {
-            forceGraphRef.current.zoomToFit(500, 300, (n) => String(n.id) === String(node.id));
+            const graphContainer = document.getElementById('graph-container');
+            if (!graphContainer) return;
+            
+            // Get width of the graph container to compute zoom
+            const width = graphContainer.getBoundingClientRect().width;
+    
+            // Zoom to 20% width if the container is fullscreen, otherwise 35%
+            const zoomProportion = isFullScreen ? 0.20 : 0.35;
+    
+            // Compute zoom level based on container size, normalized by node size
+            const zoomLevel = (width * zoomProportion) / 10; 
+    
+            // Center the graph on the selected node
+            forceGraphRef.current.centerAt(node.x!, node.y!, 500);
+    
+            // Apply zoom
+            forceGraphRef.current.zoom(zoomLevel, 500);
         }
     };
 
@@ -557,7 +572,7 @@ export default function NetworkGraph({
     };
 
     return (
-        <div ref={graphRef} className="h-full w-full flex flex-col relative">
+        <div id="graph-container" ref={graphRef} className="h-full w-full flex flex-col relative">
             <GraphToolbar
                 onAddNode={handleAddNode}
                 onEditNode={handleEditNode}
