@@ -263,9 +263,11 @@ export default function SettingsDialog({
                             setLocalPassphrase("");
                             setIsEncryptedPlaceholder(false);
                             setUsePassphrase(false);
-                            // Also clear from localStorage if needed
+                            setSelectedChatModel(null);
+
                             localStorage.removeItem("apiKey");
                             localStorage.setItem("isApiKeyEncrypted", "false");
+                            localStorage.removeItem("selectedChatModel");
                         }}>
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Select provider" />
