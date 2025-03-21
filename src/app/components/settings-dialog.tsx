@@ -256,7 +256,17 @@ export default function SettingsDialog({
                             </div>
                         </div>
 
-                        <Select value={selectedModelProvider || ""} onValueChange={setSelectedModelProvider}>
+                        <Select value={selectedModelProvider || ""} onValueChange={(value) => {
+                            setSelectedModelProvider(value);
+                            // Clear API key & password when switching providers
+                            setLocalApiKeyInput("");
+                            setLocalPassphrase("");
+                            setIsEncryptedPlaceholder(false);
+                            setUsePassphrase(false);
+                            // Also clear from localStorage if needed
+                            localStorage.removeItem("apiKey");
+                            localStorage.setItem("isApiKeyEncrypted", "false");
+                        }}>
                             <SelectTrigger className="col-span-3">
                                 <SelectValue placeholder="Select provider" />
                             </SelectTrigger>
