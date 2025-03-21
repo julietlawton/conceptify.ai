@@ -27,6 +27,7 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
     const [demoUsesRemaining, setDemoUsesRemaining] = useState<number>(0);
     const [userFingerprint, setUserFingerprint] = useState<string | null>(null);
     const hasCheckedFingerprint = useRef(false);
+    const [isApiKeyInitialized, setIsApiKeyInitialized] = useState(false);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -41,6 +42,7 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
                     setIsApiKeyEncrypted(false);
                 }
             }
+            setIsApiKeyInitialized(true);
         }
     }, []);
 
@@ -51,7 +53,7 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
     }, [demoUsesRemaining]);
 
     useEffect(() => {
-        if (hasCheckedFingerprint.current) return;
+        if (!isApiKeyInitialized || hasCheckedFingerprint.current) return;
 
         async function checkDemoUsage() {
             try {
@@ -72,7 +74,7 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
                 const maxDemoUses = 5;
                 const remaining = Math.max(0, maxDemoUses - usageCount);
 
-                if (remaining > 0 && !apiKey) {
+                if (remaining > 0 && !apiKey && !isApiKeyEncrypted) {
                     setIsDemoActive(true);
                     setDemoUsesRemaining(remaining);
                 } else {
@@ -87,8 +89,7 @@ export const ApiKeyProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         checkDemoUsage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [isApiKeyInitialized, isApiKeyEncrypted, apiKey]);
 
     const decryptApiKey = (passphrase: string): boolean => {
         const encrypted = localStorage.getItem("apiKey");

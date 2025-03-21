@@ -73,11 +73,7 @@ export default function SettingsDialog({
     const [usePassphrase, setUsePassphrase] = useState(true);
     const [localPassphrase, setLocalPassphrase] = useState("");
     const [localApiKeyInput, setLocalApiKeyInput] = useState(apiKey || "");
-
-    const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const sanitizedValue = e.target.value.replace(/[^A-Za-z0-9-_]/g, "");
-        setLocalApiKeyInput(sanitizedValue);
-    };
+    const [isEncryptedPlaceholder, setIsEncryptedPlaceholder] = useState(false);
 
     useEffect(() => {
         const storedProvider = localStorage.getItem("selectedProvider");
@@ -86,6 +82,63 @@ export default function SettingsDialog({
         if (storedProvider) setSelectedModelProvider(storedProvider);
         if (storedModel) setSelectedChatModel(storedModel);
     }, []);
+
+    useEffect(() => {
+        if (isSettingsOpen) {
+            const storedKey = localStorage.getItem("apiKey");
+            const encryptedFlag = localStorage.getItem("isApiKeyEncrypted") === "true";
+
+            if (storedKey) {
+                if (encryptedFlag) {
+                    setLocalApiKeyInput("***********************************************");
+                    setLocalPassphrase("************");
+                    setUsePassphrase(true);
+                    setIsEncryptedPlaceholder(true);
+                }
+                else {
+                    setLocalApiKeyInput(storedKey);
+                    setUsePassphrase(false);
+                    setIsEncryptedPlaceholder(false);
+                }
+            }
+            else {
+                // No stored key, reset both
+                setLocalApiKeyInput("");
+                setLocalPassphrase("");
+                setUsePassphrase(false);
+                setIsEncryptedPlaceholder(false);
+            }
+        }
+    }, [isSettingsOpen]);
+
+    const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (isEncryptedPlaceholder) {
+            setIsEncryptedPlaceholder(false);
+            setLocalPassphrase("");
+        }
+        const sanitizedValue = e.target.value.replace(/[^A-Za-z0-9-_]/g, "");
+        setLocalApiKeyInput(sanitizedValue);
+    };
+
+    const handleIsEncryptedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const isChecked = e.target.checked;
+        setUsePassphrase(isChecked);
+        setIsEncryptedPlaceholder(false);
+
+        if (!isChecked) {
+            setLocalApiKeyInput("");
+            setLocalPassphrase("");
+            localStorage.removeItem("apiKey");
+            localStorage.setItem("isApiKeyEncrypted", "false");
+        }
+    };
+
+    const handlePassphraseChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (isEncryptedPlaceholder) {
+            setIsEncryptedPlaceholder(false);
+        }
+        setLocalPassphrase(e.target.value);
+    };
 
     const handleExportData = () => {
         const data = JSON.stringify(conversations, null, 2);
@@ -146,8 +199,22 @@ export default function SettingsDialog({
             return;
         }
 
+        if (localApiKeyInput.trim() === "") {
+            toast.error("API key cannot be empty.");
+            return;
+        }
+
         if (usePassphrase && localPassphrase.trim() === "") {
             toast.error("Please enter a password or disable password protection.");
+            return;
+        }
+
+        if (isEncryptedPlaceholder) {
+            // If placeholders are still shown, skip saving the key
+            localStorage.setItem("selectedProvider", selectedModelProvider);
+            localStorage.setItem("selectedChatModel", selectedChatModel);
+            toast.success("Settings saved!");
+            setIsSettingsOpen(false);
             return;
         }
 
@@ -249,7 +316,7 @@ export default function SettingsDialog({
                                             type="checkbox"
                                             id="usePassphrase"
                                             checked={usePassphrase}
-                                            onChange={(e) => setUsePassphrase(e.target.checked)}
+                                            onChange={handleIsEncryptedChange}
                                             className="h-4 w-4 accent-black"
                                         />
                                         <Label htmlFor="usePassphrase" className="cursor-pointer">
@@ -265,7 +332,7 @@ export default function SettingsDialog({
                                             id="passphrase"
                                             type="password"
                                             value={localPassphrase}
-                                            onChange={(e) => setLocalPassphrase(e.target.value)}
+                                            onChange={handlePassphraseChange}
                                             className="col-span-3"
                                             placeholder="Enter password"
                                         />
