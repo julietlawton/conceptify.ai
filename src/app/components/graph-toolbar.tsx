@@ -16,7 +16,7 @@ import { UIGraphNode, ColorPalette } from "../lib/types";
 import { inter } from "../ui/fonts";
 import { ColorGradientIcon } from "../ui/icons";
 import { ColorPalettes } from "../ui/color-palettes";
-import { ArrowUturnLeftIcon, ArrowUturnRightIcon } from "@heroicons/react/24/outline";
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, LightBulbIcon } from "@heroicons/react/24/outline";
 import { DialogDescription } from "@radix-ui/react-dialog";
 
 interface GraphToolbarProps {
@@ -36,6 +36,7 @@ interface GraphToolbarProps {
     onRedo: () => void;
     undoStackLength: number;
     redoStackLength: number;
+    onGenerateSummary: () => void;
 }
 
 function useOnClickOutside<T extends HTMLElement>(
@@ -75,7 +76,8 @@ export function GraphToolbar({
     onUndo,
     onRedo,
     undoStackLength,
-    redoStackLength
+    redoStackLength,
+    onGenerateSummary
 }: GraphToolbarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -184,7 +186,7 @@ export function GraphToolbar({
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                            Edit Node
+                            Edit Selected Node
                         </TooltipContent>
                     </Tooltip>
 
@@ -196,9 +198,13 @@ export function GraphToolbar({
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                            Delete Node
+                            Delete Selected Node
                         </TooltipContent>
                     </Tooltip>
+
+                    {selectedNode && (
+                        <Input type="text" value={selectedNode.name} readOnly className="ml-2 w-40" placeholder="Selected Node" />
+                    )}
 
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -320,9 +326,21 @@ export function GraphToolbar({
 
                     </div>
 
-                    {selectedNode && (
-                        <Input type="text" value={selectedNode.name} readOnly className="ml-2 w-40" placeholder="Selected Node" />
-                    )}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                onClick={onGenerateSummary}
+                                variant="outline"
+                                size="icon"
+                                disabled={!nodes || nodes.length === 0}
+                            >
+                                <LightBulbIcon />
+                                <span className="sr-only">Generate Summary</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Generate Summary</TooltipContent>
+                    </Tooltip>
+
                     {undoStackLength !== 0 && (
                         <Tooltip>
                             <TooltipTrigger asChild>

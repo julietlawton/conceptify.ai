@@ -1,8 +1,8 @@
 "use client"
-import { useCallback, useState, useRef, useEffect } from "react"
-import dynamic from "next/dynamic"
+import { useCallback, useState, useRef, useEffect } from "react";
+import dynamic from "next/dynamic";
 import 'katex/dist/katex.min.css';
-import { GraphToolbar } from "./graph-toolbar"
+import { GraphToolbar } from "./graph-toolbar";
 import {
     Dialog,
     DialogContent,
@@ -10,14 +10,14 @@ import {
     DialogTitle,
     DialogFooter,
     DialogDescription,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { useChat, useCurrentGraph } from "../context/ChatContext"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useChat, useCurrentGraph } from "../context/ChatContext";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -34,6 +34,7 @@ import {
 import { inter } from "../ui/fonts";
 import { colorPaletteById } from "../ui/color-palettes";
 import { NodeTooltip } from "./node-tooltip";
+import SummaryCard from "./summary-card";
 
 interface NewNodeData {
     name: string;
@@ -82,8 +83,9 @@ export default function NetworkGraph({
     isGraphVisible: boolean,
     onToggleFullScreen: () => void
 }) {
-    const { 
+    const {
         currentConversationId,
+        getConversationTitle,
         addActionToUndoStack,
         undoAction,
         redoAction,
@@ -110,6 +112,10 @@ export default function NetworkGraph({
     const graphRef = useRef<HTMLDivElement | null>(null);
     const forceGraphRef = useRef<ForceGraphMethods | undefined>(undefined);
     const [typedLetter, setTypedLetter] = useState<string>("");
+
+    const [isSummaryCardVisible, setIsSummaryCardVisible] = useState(false);
+    const [isSummaryLoading, setIsSummaryLoading] = useState(false);
+    const [summaryContent, setSummaryContent] = useState("");
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
         const char = event.key.toLowerCase();
@@ -270,7 +276,7 @@ export default function NetworkGraph({
                 typeof typedLink.target === "object" && typedLink.target
                     ? typedLink.target.id
                     : typedLink.target;
-            
+
             const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
             const linkHighlightColor = palette.linkHighlight ?? colorPaletteById.defaultPalette.linkHighlight;
             return highlightLinks.has(typedLink.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde"
@@ -538,19 +544,19 @@ export default function NetworkGraph({
         if (forceGraphRef.current && node) {
             const graphContainer = document.getElementById('graph-container');
             if (!graphContainer) return;
-            
+
             // Get width of the graph container to compute zoom
             const width = graphContainer.getBoundingClientRect().width;
-    
+
             // Zoom to 20% width if the container is fullscreen, otherwise 35%
             const zoomProportion = isFullScreen ? 0.20 : 0.35;
-    
+
             // Compute zoom level based on container size, normalized by node size
-            const zoomLevel = (width * zoomProportion) / 10; 
-    
+            const zoomLevel = (width * zoomProportion) / 10;
+
             // Center the graph on the selected node
             forceGraphRef.current.centerAt(node.x!, node.y!, 500);
-    
+
             // Apply zoom
             forceGraphRef.current.zoom(zoomLevel, 500);
         }
@@ -569,6 +575,51 @@ export default function NetworkGraph({
             const pureGraph = stripUIGraph(newGraph);
             updateConversationGraphData(currentConversationId, pureGraph);
         }
+    };
+
+    const handleGenerateSummary = () => {
+        if (!currentConversationId || !graphData) return;
+
+        console.log(graphData)
+
+        setIsSummaryLoading(true);
+        setIsSummaryCardVisible(true);
+
+        setTimeout(() => {
+            const { nodes, links } = graphData;
+
+            const outgoingLinksMap: Record<string, { relation: string, targetName: string }[]> = {};
+            nodes.forEach((node) => { outgoingLinksMap[node.id] = []; });
+
+            links.forEach((link) => {
+                const sourceId = link.source;
+                const targetNode = nodes.find(n => n.id === link.target);
+                if (targetNode) {
+                    outgoingLinksMap[sourceId].push({
+                        relation: link.label,
+                        targetName: targetNode.name
+                    });
+                }
+            });
+
+            let summary = "";
+
+            nodes.forEach((node) => {
+                summary += `## ${node.name}\n`;
+                summary += `${node.info}\n\n`;
+                const related = outgoingLinksMap[node.id];
+                if (related.length > 0) {
+                    summary += `**Related Concepts:**\n\n`;
+                    related.forEach(rel => {
+                        summary += `→ *${rel.relation}* ${rel.targetName}\n\n`;
+                    });
+                    summary += `\n`;
+                }
+            });
+
+            setSummaryContent(summary);
+            setIsSummaryLoading(false);
+        }, 400);
     };
 
     return (
@@ -590,6 +641,7 @@ export default function NetworkGraph({
                 onRedo={redoAction}
                 undoStackLength={undoStackLength}
                 redoStackLength={redoStackLength}
+                onGenerateSummary={handleGenerateSummary}
             />
             <div className={`flex-grow transition-opacity duration-400 ${isGraphVisible ? "visible opacity-100" : "invisible opacity-0"}`}>
                 <ForceGraph2D
@@ -664,7 +716,7 @@ export default function NetworkGraph({
                         ctx.arc(node.x ?? 0, node.y ?? 0, nodeSize, 0, 2 * Math.PI);
                         ctx.fillStyle = nodeColor(node);
                         ctx.fill();
-                        
+
                         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
                         const paletteTextColor = palette.textColor ?? colorPaletteById.defaultPalette.textColor;
                         const paletteNodeHighlightColor = palette.nodeHighlight ?? colorPaletteById.defaultPalette.nodeHighlight;
@@ -785,7 +837,7 @@ export default function NetworkGraph({
                                                 {graphData.nodes
                                                     .filter((node) => dialogMode === "edit" ? node.id !== selectedNode?.id : true)
                                                     .filter((node) =>
-                                                        newNodeData.edges[index]?.nodeId === node.id || 
+                                                        newNodeData.edges[index]?.nodeId === node.id ||
                                                         !newNodeData.edges.some((edge) => edge.nodeId === node.id)
                                                     )
                                                     .sort((a, b) => a.name.localeCompare(b.name))
@@ -867,6 +919,15 @@ export default function NetworkGraph({
                     hallucinate
                 </a>. Remember to fact check generated content.
             </div>
+            {isSummaryCardVisible && (
+                <SummaryCard
+                    isSummaryLoading={isSummaryLoading}
+                    setIsSummaryCardVisible={setIsSummaryCardVisible}
+                    summaryTitle={(currentConversationId && getConversationTitle(currentConversationId)) || "Conversation Summary"}
+                    summaryContent={summaryContent}
+                />
+            )}
         </div>
+
     )
 }

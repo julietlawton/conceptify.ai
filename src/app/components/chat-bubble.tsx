@@ -1,7 +1,6 @@
 import { ArrowRightEndOnRectangleIcon, ArrowPathIcon } from "@heroicons/react/24/solid";
 import { Message } from "ai";
-import ReactMarkdown, { type Components } from 'react-markdown';
-import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -11,92 +10,7 @@ import { CognitionIcon } from "../ui/icons";
 import { CheckIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useState } from "react";
-
-const components: Partial<Components> = {
-    ol: ({ children, ...props }) => {
-        return (
-            <ol className="list-decimal list-outside ml-4" {...props}>
-                {children}
-            </ol>
-        );
-    },
-    li: ({ children, ...props }) => {
-        return (
-            <li className="py-1" {...props}>
-                {children}
-            </li>
-        );
-    },
-    ul: ({ children, ...props }) => {
-        return (
-            <ul className="list-disc list-outside ml-4" {...props}>
-                {children}
-            </ul>
-        );
-    },
-    strong: ({ children, ...props }) => {
-        return (
-            <span className="font-semibold" {...props}>
-                {children}
-            </span>
-        );
-    },
-    a: ({ children, ...props }) => {
-        return (
-            // @ts-expect-error acceptable to be undefined
-            <Link
-                className="text-blue-500 hover:underline"
-                target="_blank"
-                rel="noreferrer"
-                {...props}
-            >
-                {children}
-            </Link>
-        );
-    },
-    h1: ({ children, ...props }) => {
-        return (
-            <h1 className="text-3xl font-semibold mt-6 mb-2" {...props}>
-                {children}
-            </h1>
-        );
-    },
-    h2: ({ children, ...props }) => {
-        return (
-            <h2 className="text-2xl font-semibold mt-6 mb-2" {...props}>
-                {children}
-            </h2>
-        );
-    },
-    h3: ({ children, ...props }) => {
-        return (
-            <h3 className="text-xl font-semibold mt-6 mb-2" {...props}>
-                {children}
-            </h3>
-        );
-    },
-    h4: ({ children, ...props }) => {
-        return (
-            <h4 className="text-lg font-semibold mt-6 mb-2" {...props}>
-                {children}
-            </h4>
-        );
-    },
-    h5: ({ children, ...props }) => {
-        return (
-            <h5 className="text-base font-semibold mt-6 mb-2" {...props}>
-                {children}
-            </h5>
-        );
-    },
-    h6: ({ children, ...props }) => {
-        return (
-            <h6 className="text-sm font-semibold mt-6 mb-2" {...props}>
-                {children}
-            </h6>
-        );
-    },
-};
+import { mdxComponents } from "../lib/mdxComponents";
 
 export function ChatBubble({
     index,
@@ -141,7 +55,7 @@ export function ChatBubble({
                                 remarkPlugins={[remarkMath, remarkGfm]}
                                 rehypePlugins={[rehypeKatex, rehypeHighlight]}
                                 className="prose prose-sm space-y-4"
-                                components={components}
+                                components={mdxComponents}
                             >
                                 {msg.content}
                             </ReactMarkdown>

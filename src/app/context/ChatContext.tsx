@@ -18,6 +18,7 @@ interface ChatContextType {
     setIsLoadingConversations: (loading: boolean) => void;
     createNewConversation: () => void;
     updateConversationTitle: (title: string) => void;
+    getConversationTitle: (conversationId: string) => string;
     switchConversation: (conversationId: string) => void;
     addMessageToConversation: (message: Message) => void;
     getLastMessageTime: (conversation: Conversation) => number;
@@ -185,7 +186,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             isInitialMount.current = false;
         } else {
             if (Object.keys(conversations).length === 0) {
-                console.log("User deleted all conversations, creating new one");
                 createNewConversation();
             }
         }
@@ -235,7 +235,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             localStorage.setItem("conversations", JSON.stringify(updatedConversations));
             return updatedConversations;
         });
-        console.log("Cold starting graph:", newGraph);
         setGraphData(newGraph);
     };
 
@@ -251,6 +250,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
         });
     };
 
+    const getConversationTitle = (conversationId: string) => {
+        return conversations[conversationId].title;
+    }
+
     const updateConversationGraphData = (conversationId: string, newGraph: KnowledgeGraph | null) => {
         setConversations((prevConversations) => {
             const updatedConversations = {
@@ -264,14 +267,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             localStorage.setItem("conversations", JSON.stringify(updatedConversations));
             return updatedConversations;
         });
-        console.log("Updating graph:", newGraph);
         setGraphData(newGraph);
     };
 
     const switchConversation = (conversationId: string) => {
         if (conversations[conversationId]) {
             setCurrentConversationId(conversationId);
-            console.log("Graph data", conversations[conversationId]?.graphData);
             setGraphData(conversations[conversationId]?.graphData || null);
             setUndoGraphActionStack([]);
             setRedoGraphActionStack([]);
@@ -280,9 +281,6 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Add a message to the current conversation
     const addMessageToConversation = (message: Message) => {
-        console.log(conversations);
-        console.log(currentConversationId);
-
         if (!currentConversationId) return;
 
         setConversations((prev) => {
@@ -309,6 +307,7 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
                 setIsLoadingConversations,
                 createNewConversation,
                 updateConversationTitle,
+                getConversationTitle,
                 switchConversation,
                 addMessageToConversation,
                 getLastMessageTime,
