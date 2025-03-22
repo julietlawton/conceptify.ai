@@ -43,14 +43,6 @@ interface NewNodeData {
     edges: NodeEdge[];
 }
 
-function djb2(str: string): number {
-    let hash = 5381;
-    for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) + hash) + str.charCodeAt(i);
-    }
-    return hash >>> 0;
-}
-
 function stripUIGraph(uiGraph: UIGraph): KnowledgeGraph {
     return {
         nodes: uiGraph.nodes.map((node) => ({
@@ -100,6 +92,8 @@ export default function NetworkGraph({
         const cloned = JSON.parse(JSON.stringify(graphData));
         return cloned;
     });
+
+    const nodeColorMapRef = useRef<Map<string, string>>(new Map());
 
     const [highlightNodes, setHighlightNodes] = useState(new Set())
     const [highlightLinks, setHighlightLinks] = useState(new Set())
@@ -169,6 +163,11 @@ export default function NetworkGraph({
     useEffect(() => {
         console.log("Conversation changed, clearing undo/redo")
     }, [currentConversationId]);
+
+    useEffect(() => {
+        // Clear color assignments when palette changes
+        nodeColorMapRef.current.clear();
+    }, [uiGraphData.settings.colorPaletteId]);
 
     const handleNodeHover = useCallback(
         (node: NodeObject | null) => {
@@ -258,12 +257,19 @@ export default function NetworkGraph({
     const nodeColor = useCallback((node: NodeObject) => {
         const typedNode = node as UIGraphNode;
         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
-        const hash = djb2(typedNode.id);
 
-        return palette.colors[hash % palette.colors.length];
-    },
-        [uiGraphData.settings.colorPaletteId]
-    );
+        // Check if color already assigned
+        if (nodeColorMapRef.current.has(typedNode.id)) {
+            return nodeColorMapRef.current.get(typedNode.id)!;
+        }
+
+        // Assign color based on current count
+        const assignedCount = nodeColorMapRef.current.size;
+        const color = palette.colors[assignedCount % palette.colors.length];
+        nodeColorMapRef.current.set(typedNode.id, color);
+
+        return color;
+    }, [uiGraphData.settings.colorPaletteId]);
 
     const linkColor = useCallback(
         (link: LinkObject) => {

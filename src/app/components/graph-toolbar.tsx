@@ -314,7 +314,7 @@ export function GraphToolbar({
                                             {palette.colors.map((color, idx) => (
                                                 <div
                                                     key={idx}
-                                                    className="w-4 h-8 rounded"
+                                                    className="w-4 h-10 rounded"
                                                     style={{ backgroundColor: color }}
                                                 />
                                             ))}
