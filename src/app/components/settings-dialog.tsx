@@ -317,8 +317,9 @@ export default function SettingsDialog({
                                                 <p>Use this option when:</p>
                                                 <ul className="mt-1 list-disc list-inside">
                                                     <li>You are sharing this browser with other people.</li>
-                                                    <li>You have untrusted browser extensions installed.</li>
-                                                </ul>
+                                                    <li>You have browser extensions installed.</li>
+                                                </ul><br></br>
+                                                <p><strong>Note: Some extensions can still access page data. Only enter your key if you trust your browser extensions.</strong></p>
                                             </div>
                                         </div>
                                     </div>
@@ -332,7 +333,7 @@ export default function SettingsDialog({
                                             className="h-4 w-4 accent-black"
                                         />
                                         <Label htmlFor="usePassphrase" className="cursor-pointer">
-                                            Require a password to secure my API key
+                                            Require a password to obscure my API key
                                         </Label>
                                     </div>
                                 </div>

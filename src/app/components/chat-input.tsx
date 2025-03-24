@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 import { ArrowUpIcon, StopIcon } from "@heroicons/react/24/solid";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface ChatInputProps {
     sendMessage: (text: string) => void;
@@ -69,21 +70,36 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
             />
             <div className="px-2">
                 {isLoading ? (
-                    <button
-                        className="rounded-full p-1.5 h-fit transition bg-black text-white hover:bg-gray-600"
-                        onClick={handleStopGeneration}
-                    >
-                        <StopIcon className="w-6 h-6" />
-                    </button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    className="rounded-full p-1.5 h-fit transition bg-black text-white hover:bg-gray-600"
+                                    onClick={handleStopGeneration}
+                                >
+                                    <StopIcon className="w-6 h-6" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Stop Generation</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+
                 ) : (
-                    <button
-                        className={`rounded-full p-1.5 h-fit transition 
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    className={`rounded-full p-1.5 h-fit transition 
             ${inputValue.trim() ? "bg-black text-white hover:bg-gray-600" : "bg-gray-300 text-gray-400"}`}
-                        disabled={!inputValue.trim()}
-                        onClick={handleClick}
-                    >
-                        <ArrowUpIcon className="w-6 h-6" />
-                    </button>
+                                    disabled={!inputValue.trim()}
+                                    onClick={handleClick}
+                                >
+                                    <ArrowUpIcon className="w-6 h-6" />
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipContent>Send Message</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 )}
             </div>
         </div>

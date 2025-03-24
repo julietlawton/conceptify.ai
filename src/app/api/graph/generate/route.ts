@@ -4,6 +4,12 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 import { KnowledgeGraph } from '@/app/lib/types';
 import { NextResponse } from 'next/server';
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 const GraphSchema = z.object({
     nodes: z.array(
@@ -25,12 +31,49 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { assistantMessage, existingGraph, selectedProvider, selectedGraphModel, isDemoActive, apiKey }:
-            { assistantMessage: string; existingGraph?: KnowledgeGraph; selectedProvider: string; selectedGraphModel: string; isDemoActive: boolean; apiKey: string | null }
-            = await req.json();
+        const {
+            assistantMessage,
+            existingGraph,
+            selectedProvider,
+            selectedGraphModel,
+            isDemoActive,
+            apiKey,
+            fingerprintId,
+        }: {
+            assistantMessage: string;
+            existingGraph?: KnowledgeGraph;
+            selectedProvider: string;
+            selectedGraphModel: string;
+            isDemoActive: boolean;
+            apiKey: string | null;
+            fingerprintId?: string;
+        } = await req.json();
 
         let modelFunction;
         if (isDemoActive) {
+            if (!fingerprintId) {
+                return new NextResponse(JSON.stringify({ error: "Fingerprint ID missing." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+
+            const exists = await redis.exists(fingerprintId);
+            if (!exists) {
+                return new NextResponse(JSON.stringify({ error: "Fingerprint not initialized." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+
+            const usageCount = await redis.incr(fingerprintId);
+            const maxUsage = 5;
+            if (usageCount > maxUsage) {
+                return new NextResponse(JSON.stringify({ error: "Demo usage limit exceeded." }), {
+                    status: 403,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
             modelFunction = openai("gpt-4o");
         }
         else {

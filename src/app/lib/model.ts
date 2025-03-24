@@ -32,7 +32,7 @@ export async function getModelResponse(messages: Message[], isDemoActive: boolea
 
 }
 
-export async function* streamModelResponse(messages: Message[], isDemoActive: boolean, apiKey: string | null) {
+export async function* streamModelResponse(messages: Message[], isDemoActive: boolean, apiKey: string | null, fingerprintId: string | null) {
   const selectedProvider = localStorage.getItem("selectedProvider");
   const selectedChatModel = localStorage.getItem("selectedChatModel");
 
@@ -46,7 +46,8 @@ export async function* streamModelResponse(messages: Message[], isDemoActive: bo
         selectedProvider,
         selectedChatModel,
         isDemoActive: isDemoActive,
-        apiKey: isDemoActive ? null : apiKey
+        apiKey: isDemoActive ? null : apiKey,
+        fingerprintId: fingerprintId
       }),
     });
 
@@ -110,7 +111,7 @@ export async function generateGraphFromMessage(requestBody: {
     nodes: string[];
     links: { source: string; target: string; label: string }[];
   };
-}, isDemoActive: boolean, apiKey: string | null) {
+}, isDemoActive: boolean, apiKey: string | null, fingerprintId: string | null) {
   const selectedProvider = localStorage.getItem("selectedProvider");
 
   let selectedGraphModel;
@@ -131,7 +132,8 @@ export async function generateGraphFromMessage(requestBody: {
       selectedProvider,
       selectedGraphModel,
       isDemoActive: isDemoActive,
-      apiKey: isDemoActive ? null : apiKey
+      apiKey: isDemoActive ? null : apiKey,
+      fingerprintId: fingerprintId
     }),
   });
 

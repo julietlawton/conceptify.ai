@@ -2,17 +2,64 @@ import { NextResponse } from "next/server";
 import { APICallError, generateText, Message, streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
+import { Redis } from "@upstash/redis";
+
+const redis = new Redis({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
     try {
-        const { messages, stream, selectedProvider, selectedChatModel, isDemoActive, apiKey }:
-            { messages: Message[]; stream?: boolean; selectedProvider: string; selectedChatModel: string; isDemoActive: boolean; apiKey: string | null }
-            = await req.json();
+        const {
+            messages,
+            stream,
+            selectedProvider,
+            selectedChatModel,
+            isDemoActive,
+            apiKey,
+            fingerprintId
+        }: {
+            messages: Message[];
+            stream?: boolean;
+            selectedProvider: string;
+            selectedChatModel: string;
+            isDemoActive: boolean;
+            apiKey: string | null;
+            fingerprintId?: string;
+        } = await req.json();
 
         let modelFunction;
-        if (isDemoActive) {
+        if (isDemoActive && stream) {
+            if (!fingerprintId) {
+                return new NextResponse(JSON.stringify({ error: "Fingerprint ID missing." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+
+            const exists = await redis.exists(fingerprintId);
+            if (!exists) {
+                return new NextResponse(JSON.stringify({ error: "Fingerprint not initialized." }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+
+            const usageCount = await redis.incr(fingerprintId);
+            const maxUsage = 5;
+            if (usageCount > maxUsage) {
+                return new NextResponse(JSON.stringify({ error: "Demo usage limit exceeded." }), {
+                    status: 403,
+                    headers: { "Content-Type": "application/json" },
+                });
+            }
+            modelFunction = openai("gpt-4o");
+        }
+        // For chat title generation, don't increment demo uses
+        else if (isDemoActive) {
             modelFunction = openai("gpt-4o");
         }
         else {

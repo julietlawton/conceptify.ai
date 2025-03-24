@@ -46,7 +46,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         <strong>Side Bar Toggle:</strong> Use the side bar toggle button to open and close the chat.
                     </p>
                     <p>
-                        <strong>Concept Map Toggle:</strong>  Use the concept map toggle button to open and close the concept map.
+                        <strong>Concept Map Toggle:</strong> Use the concept map toggle button to open and close the concept map.
                     </p>
                     <p>
                         <strong>Settings Menu:</strong> The settings menu is located at the bottom of the side bar.
@@ -145,6 +145,14 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         alt="Color Selection"
                         className="w-full max-w-xl mx-auto rounded shadow-md"
                     />
+                    <p>
+                        <strong>Generating a Summary:</strong> To collate the node information into a single summary, click the lightbulb button. The summary can be exported as a text file or a PDF.
+                    </p>
+                    <img
+                        src="/gifs/colorselection.gif"
+                        alt="Color Selection"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
                 </div>
             ),
         },
@@ -152,10 +160,11 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
             title: "Settings and Your Data",
             content: (
                 <div className="space-y-4">
-                    <p>Configure your model provider settings and manage your data in the Settings menu. After the demo period, this app will require an API key for chatting with an AI assistant and concept map generation.</p>
+                    <p>Configure your model provider settings and manage your data in the Settings menu. After the demo period, this app will require an API key for chat and concept map generation.</p>
                     <p>
-                        All app data, including your API key, is stored <strong>locally in your browser</strong>. You can optionally set a password for your API key to encrypt it. This is recommended if you share a computer with
-                        other people or have untrusted browser extensions installed.
+                        All app data, including your API key, is stored <strong>locally in your browser</strong> and never sent elsewhere. You can optionally set a password to encrypt your key for privacy. 
+                        This is recommended if you share your device or use browser extensions. While encryption helps prevent casual access, some extensions can still read data on websites you visit. 
+                        <strong> Only enter your API key if you trust your browser extensions.</strong>
                     </p>
                     <p>
                         Since your data is stored locally, it is recommended to save your data regularly by exporting it to avoid losing it when your browser updates or clears.

@@ -25,7 +25,7 @@ export default function Chat() {
         addActionToUndoStack
     } = useChat();
 
-    const { apiKey, isDemoActive, userFingerprint, setDemoUsesRemaining } = useApiKey();
+    const { apiKey, isDemoActive, userFingerprint, demoUsesRemaining, setDemoUsesRemaining } = useApiKey();
 
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
@@ -165,7 +165,7 @@ export default function Chat() {
 
         let streamedContent = "";
         try {
-            for await (const chunk of streamModelResponse([...messages, userMessage], isDemoActive, apiKey)) {
+            for await (const chunk of streamModelResponse([...messages, userMessage], isDemoActive, apiKey, userFingerprint)) {
                 if (stoppedRef.current) {
                     break;
                 }
@@ -189,18 +189,7 @@ export default function Chat() {
             setStreamingMessageId(null);
             setIsLoading(false);
             if (isDemoActive) {
-                try {
-                    const res = await fetch("/api/fingerprint/increment", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ fingerprintId: userFingerprint }),
-                    });
-
-                    const data = await res.json();
-                    setDemoUsesRemaining(Math.max(0, 5 - data.usage));
-                } catch (err) {
-                    console.error("Failed to increment demo usage:", err);
-                }
+                setDemoUsesRemaining(Math.max(0, demoUsesRemaining - 1));
             }
 
         }
@@ -232,7 +221,7 @@ export default function Chat() {
                 return;
             }
 
-            const response = await generateGraphFromMessage(requestBody, isDemoActive, apiKey);
+            const response = await generateGraphFromMessage(requestBody, isDemoActive, apiKey, userFingerprint);
 
             if (!response) {
                 return;
@@ -323,18 +312,7 @@ export default function Chat() {
             }
 
             if (isDemoActive) {
-                try {
-                    const res = await fetch("/api/fingerprint/increment", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ fingerprintId: userFingerprint }),
-                    });
-
-                    const data = await res.json();
-                    setDemoUsesRemaining(Math.max(0, 5 - data.usage));
-                } catch (err) {
-                    console.error("Failed to increment demo usage:", err);
-                }
+                setDemoUsesRemaining(Math.max(0, demoUsesRemaining - 1));
             }
 
         } catch (error) {

@@ -148,7 +148,7 @@ export default function SideNav() {
             <div className="flex-grow"></div>
 
             {isDemoActive && (
-                <div className="text-md text-gray-500 text-center px-6 py-2 mb-6">
+                <div className="text-md text-gray-500 text-center px-6 py-2 mt-4 mb-6">
                     Demo is active. You have {demoUsesRemaining} action{demoUsesRemaining !== 1 ? "s" : ""} remaining.
                 </div>
             )}
