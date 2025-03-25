@@ -22,7 +22,7 @@ export default function SummaryCard({
     isSummaryLoading: boolean,
     setIsSummaryCardVisible: (open: boolean) => void;
     summaryTitle: string;
-    summaryContent: string;
+    summaryContent: string[];
 }) {
     const contentRef = useRef<HTMLDivElement>(null);
     const reactToPrintFn = useReactToPrint({
@@ -70,17 +70,19 @@ export default function SummaryCard({
                                 <Loader2 className="animate-spin h-6 w-6 text-gray-500" />
                             </div>
                         ) : (
-                            <div ref={contentRef} className="print:p-8">
-                                <div className="space-y-2">
-                                    <ReactMarkdown
-                                        remarkPlugins={[remarkMath, remarkGfm]}
-                                        rehypePlugins={[rehypeKatex, rehypeHighlight]}
-                                        className="prose prose-sm space-y-4"
-                                        components={mdxComponents}
-                                    >
-                                        {summaryContent}
-                                    </ReactMarkdown>
-                                </div>
+                            <div ref={contentRef} className="print px-4">
+                                {summaryContent.map((block, index) => (
+                                    <div key={index} className="summary-block">
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkMath, remarkGfm]}
+                                            rehypePlugins={[rehypeKatex, rehypeHighlight]}
+                                            className="prose prose-sm space-y-4"
+                                            components={mdxComponents}
+                                        >
+                                            {block}
+                                        </ReactMarkdown>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </CardContent>
@@ -91,7 +93,7 @@ export default function SummaryCard({
                 <CardFooter className="flex justify-center space-x-4 px-6 pb-4 pt-2">
                     <Button
                         onClick={() => downloadAsText(
-                            summaryContent,
+                            summaryContent.join("\n\n"),
                             summaryTitle
                         )}
                     >

@@ -32,6 +32,7 @@
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
   }
+
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -64,6 +65,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -71,6 +73,7 @@
 
 /* Add rules for code blocks within .prose */
 @layer utilities {
+
   .prose pre,
   .prose pre code {
     white-space: pre-wrap;
@@ -83,12 +86,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
 }
 
-.hover-card ul, .hover-card ol {
+.hover-card ul,
+.hover-card ol {
   list-style: revert;
   padding-left: 1.5rem;
 }
@@ -123,4 +128,22 @@
 * {
   scrollbar-width: auto;
   scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+@media print {
+  @page {
+    margin: 0.75in;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .summary-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

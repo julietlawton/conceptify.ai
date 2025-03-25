@@ -109,7 +109,7 @@ export default function NetworkGraph({
 
     const [isSummaryCardVisible, setIsSummaryCardVisible] = useState(false);
     const [isSummaryLoading, setIsSummaryLoading] = useState(false);
-    const [summaryContent, setSummaryContent] = useState("");
+    const [summaryContent, setSummaryContent] = useState<string[]>([]);
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
         const char = event.key.toLowerCase();
@@ -159,10 +159,6 @@ export default function NetworkGraph({
         const cloned = JSON.parse(JSON.stringify(graphData));
         setUiGraphData(cloned);
     }, [graphData]);
-
-    useEffect(() => {
-        console.log("Conversation changed, clearing undo/redo")
-    }, [currentConversationId]);
 
     useEffect(() => {
         // Clear color assignments when palette changes
@@ -391,9 +387,6 @@ export default function NetworkGraph({
                 y: avgY + (Math.random() - 0.5) * 100,
             }
 
-            console.log(newNode);
-            console.log(newNodeData);
-
             // Convert each simplified edge in newNodeData into a full graph link.
             // Look up the "other" node using edge.nodeId.
             const newLinks = newNodeData.edges
@@ -586,8 +579,6 @@ export default function NetworkGraph({
     const handleGenerateSummary = () => {
         if (!currentConversationId || !graphData) return;
 
-        console.log(graphData)
-
         setIsSummaryLoading(true);
         setIsSummaryCardVisible(true);
 
@@ -608,22 +599,21 @@ export default function NetworkGraph({
                 }
             });
 
-            let summary = "";
-
-            nodes.forEach((node) => {
-                summary += `## ${node.name}\n`;
-                summary += `${node.info}\n\n`;
+            const summaryBlocks = nodes.map((node) => {
+                let block = `## ${node.name}\n${node.info}\n\n`;
+              
                 const related = outgoingLinksMap[node.id];
                 if (related.length > 0) {
-                    summary += `**Related Concepts:**\n\n`;
-                    related.forEach(rel => {
-                        summary += `→ *${rel.relation}* ${rel.targetName}\n\n`;
-                    });
-                    summary += `\n`;
+                  block += `**Related Concepts:**\n\n`;
+                  related.forEach(rel => {
+                    block += `→ *${rel.relation}* ${rel.targetName}\n\n`;
+                  });
                 }
-            });
-
-            setSummaryContent(summary);
+              
+                return block.trim();
+              });
+              
+            setSummaryContent(summaryBlocks);
             setIsSummaryLoading(false);
         }, 400);
     };
