@@ -1,7 +1,8 @@
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
     PlusIcon,
     PencilIcon,
@@ -11,13 +12,11 @@ import {
     ArrowPathRoundedSquareIcon,
     MagnifyingGlassIcon
 } from "@heroicons/react/24/solid"
-import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { UIGraphNode, ColorPalette } from "../lib/types";
-import { inter } from "../ui/fonts";
-import { ColorGradientIcon } from "../ui/icons";
-import { ColorPalettes } from "../ui/color-palettes";
 import { ArrowUturnLeftIcon, ArrowUturnRightIcon, LightBulbIcon } from "@heroicons/react/24/outline";
-import { DialogDescription } from "@radix-ui/react-dialog";
+import { UIGraphNode, ColorPalette } from "@/app/lib/types";
+import { inter } from "@/app/ui/fonts";
+import { ColorGradientIcon } from "@/app/ui/icons";
+import { ColorPalettes } from "@/app/ui/color-palettes";
 
 interface GraphToolbarProps {
     onAddNode: () => void;
@@ -39,6 +38,7 @@ interface GraphToolbarProps {
     onGenerateSummary: () => void;
 }
 
+// Helper function to close search or color palette picker when you click outside of them
 function useOnClickOutside<T extends HTMLElement>(
     ref: RefObject<T>,
     handler: (event: MouseEvent | TouchEvent) => void
@@ -60,7 +60,8 @@ function useOnClickOutside<T extends HTMLElement>(
     }, [ref, handler]);
 }
 
-export function GraphToolbar({
+// Graph toolbar component
+export default function GraphToolbar({
     onAddNode,
     onEditNode,
     onDeleteNode,
@@ -80,30 +81,38 @@ export function GraphToolbar({
     onGenerateSummary
 }: GraphToolbarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
+
+    // Search state
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [highlightIndex, setHighlightIndex] = useState<number>(-1);
     const searchInputRef = useRef<HTMLInputElement>(null);
 
+    // Color palette state
     const [isColorPalettePickerOpen, setIsColorPalettePickerOpen] = useState(false);
     const [selectedPalette, setSelectedPalette] = useState<ColorPalette>(currentColorPalette);
     const colorPaletteInputRef = useRef<HTMLInputElement>(null);
 
+    // Delete graph dialog state
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+    // Close search and color palette picker on click outside
     useOnClickOutside(containerRef as React.RefObject<HTMLDivElement>, () => {
         setIsSearchOpen(false);
         setIsColorPalettePickerOpen(false);
     });
 
+    // Set the highlighted result as the first one when search term changes
     useEffect(() => {
         setHighlightIndex(0);
     }, [searchTerm]);
 
+    // Update the color palette state when the select palette changes
     useEffect(() => {
         setSelectedPalette(currentColorPalette);
     }, [currentColorPalette]);
 
+    // Memoize search results
     const searchResults = useMemo(() => {
         if (!searchTerm.trim()) return [];
         return nodes.filter((node) =>
@@ -111,6 +120,7 @@ export function GraphToolbar({
         );
     }, [searchTerm, nodes]);
 
+    // Reset search on open
     useEffect(() => {
         if (isSearchOpen && searchInputRef.current) {
             searchInputRef.current.focus();
@@ -119,10 +129,6 @@ export function GraphToolbar({
         }
         setSearchTerm("");
     }, [isSearchOpen]);
-
-    useEffect(() => {
-        setHighlightIndex(0);
-    }, [searchTerm]);
 
     // Handle keydown events for arrow navigation
     const handleKeyDown = useCallback(
@@ -151,11 +157,13 @@ export function GraphToolbar({
         [isSearchOpen, searchResults, highlightIndex, onSearchSelect]
     );
 
+    // Handle user selecting a node in the search results
     const handleSelectNode = useCallback((node: UIGraphNode) => {
         onSearchSelect(node);
         setIsSearchOpen(false);
     }, [onSearchSelect]);
 
+    // Handle user selecting a new color palette
     const handlePaletteSelect = (palette: ColorPalette) => {
         setSelectedPalette(palette);
         onColorPaletteSelect(palette);
@@ -166,6 +174,7 @@ export function GraphToolbar({
         <div ref={containerRef} className="flex items-center justify-between p-2 bg-gray-100">
             <TooltipProvider>
                 <div className="flex items-center space-x-2">
+                    {/* Add node button */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button onClick={onAddNode} variant="outline" size="icon" className="black">
@@ -177,7 +186,7 @@ export function GraphToolbar({
                             Add Node
                         </TooltipContent>
                     </Tooltip>
-
+                    {/* Edit node button - disabled when no node is selected */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button onClick={onEditNode} variant="outline" size="icon" className="text-gray-600" disabled={!selectedNode}>
@@ -189,7 +198,7 @@ export function GraphToolbar({
                             Edit Selected Node
                         </TooltipContent>
                     </Tooltip>
-
+                    {/* Delete node button - disabled when no node is selected */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button onClick={onDeleteNode} variant="outline" size="icon" className="text-gray-600" disabled={!selectedNode}>
@@ -202,10 +211,12 @@ export function GraphToolbar({
                         </TooltipContent>
                     </Tooltip>
 
+                    {/* If a node is selected, display its name */}
                     {selectedNode && (
                         <Input type="text" value={selectedNode.name} readOnly className="ml-2 w-40" placeholder="Selected Node" />
                     )}
 
+                    {/* Reset view button */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button onClick={onResetView} variant="outline" size="icon">
@@ -218,6 +229,7 @@ export function GraphToolbar({
                         </TooltipContent>
                     </Tooltip>
 
+                    {/* Fullscreen button */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button onClick={onToggleFullScreen} variant="outline" size="icon">
@@ -230,12 +242,14 @@ export function GraphToolbar({
                         </TooltipContent>
                     </Tooltip>
 
+                    {/* Search button */}
                     <div className="relative">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
                                     onClick={() => {
                                         setIsSearchOpen((prev) => !prev);
+                                        // If the color palette picker was open, close it when opening search
                                         if (isColorPalettePickerOpen) {
                                             setIsColorPalettePickerOpen(false);
                                         }
@@ -249,7 +263,8 @@ export function GraphToolbar({
                             </TooltipTrigger>
                             <TooltipContent>Search Nodes</TooltipContent>
                         </Tooltip>
-
+                        
+                        {/* Search bar input */}
                         {isSearchOpen && (
                             <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded shadow z-20">
                                 <Input
@@ -261,6 +276,7 @@ export function GraphToolbar({
                                     placeholder="Search nodes..."
                                     className="w-full rounded px-2 py-1"
                                 />
+                                {/* Search results */}
                                 {searchResults.length > 0 && (
                                     <div className="mt-1 max-h-72 overflow-y-auto">
                                         {searchResults.map((node, index) => (
@@ -278,13 +294,15 @@ export function GraphToolbar({
                             </div>
                         )}
                     </div>
-
+                    
+                    {/* Color palette picker button */}
                     <div className="relative">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
                                     onClick={() => {
                                         setIsColorPalettePickerOpen((prev) => !prev);
+                                        // If search was open, close it when opening color palette picker
                                         if (isSearchOpen) {
                                             setIsSearchOpen(false);
                                         }
@@ -298,7 +316,8 @@ export function GraphToolbar({
                             </TooltipTrigger>
                             <TooltipContent>Select Color Palette</TooltipContent>
                         </Tooltip>
-
+                        
+                        {/* Show available color palettes */}
                         {isColorPalettePickerOpen && (
                             <div className="absolute top-full left-0 mt-2 w-80 bg-white border rounded shadow z-20">
                                 {ColorPalettes.map((palette) => (
@@ -325,7 +344,8 @@ export function GraphToolbar({
                         )}
 
                     </div>
-
+                    
+                    {/* Generate graph summary button */}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
@@ -340,7 +360,8 @@ export function GraphToolbar({
                         </TooltipTrigger>
                         <TooltipContent>Generate Summary</TooltipContent>
                     </Tooltip>
-
+                    
+                    {/* If undo stack is not empty, show undo button */}
                     {undoStackLength !== 0 && (
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -354,6 +375,7 @@ export function GraphToolbar({
                             </TooltipContent>
                         </Tooltip>
                     )}
+                    {/* If redo stack is not empty, show redo button */}
                     {redoStackLength !== 0 && (
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -369,7 +391,7 @@ export function GraphToolbar({
                     )}
                 </div>
 
-
+                {/* Delete graph button */}
                 <div className="flex items-center">
                     <button
                         className="flex items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
@@ -380,6 +402,8 @@ export function GraphToolbar({
 
                 </div>
             </TooltipProvider >
+            
+            {/* Graph deletion confirmation dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>

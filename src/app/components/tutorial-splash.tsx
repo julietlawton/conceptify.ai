@@ -1,21 +1,24 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
-import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/solid"
-import { CheckCircleIcon } from "@heroicons/react/24/outline"
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/solid";
+import { CheckCircleIcon } from "@heroicons/react/24/outline";
 
-export function TutorialSplash({ onClose }: { onClose: () => void }) {
-    const [currentStep, setCurrentStep] = useState(0)
+// Tutorial splash screen component
+export default function TutorialSplash({ onClose }: { onClose: () => void }) {
+    const [currentStep, setCurrentStep] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
+    // When the step changes, scroll back up to the top of the card
     useEffect(() => {
         if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTop = 0;
         }
     }, [currentStep]);
 
+    // Content for each tutorial step
     const tutorialSteps = [
         {
             title: (
@@ -198,33 +201,28 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                 </div>
             ),
         },
-    ]
+    ];
 
+    // Move tutorial to the next card
     const nextStep = () => {
         if (currentStep < tutorialSteps.length - 1) {
-            setCurrentStep(currentStep + 1)
+            setCurrentStep(currentStep + 1);
         } else {
-            onClose()
+            onClose();
         }
-    }
+    };
 
+    // Move tutorial to the previous card
     const prevStep = () => {
         if (currentStep > 0) {
-            setCurrentStep(currentStep - 1)
+            setCurrentStep(currentStep - 1);
         }
-    }
-
-    useEffect(() => {
-        // Prevent scrolling of the background when tutorial is open
-        document.body.style.overflow = "hidden"
-        return () => {
-            document.body.style.overflow = "auto"
-        }
-    }, [])
+    };
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <Card className="w-full max-w-2xl max-h-[90%] flex flex-col">
+                {/* Title for each tutorial card */}
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle className="text-2xl">{tutorialSteps[currentStep].title}</CardTitle>
@@ -235,6 +233,7 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                     </div>
                 </CardHeader>
 
+                {/* Tutorial content for each card */}
                 <div className="relative flex-1 overflow-hidden">
                     <CardContent
                         ref={scrollContainerRef}
@@ -242,10 +241,12 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                         style={{ maxHeight: "calc(90vh - 150px)" }}>
                         {tutorialSteps[currentStep].content}
                     </CardContent>
+                    {/* Top and bottom gradient to fade content to white (avoids harsh lines between content and header/footer) */}
                     <div className="pointer-events-none absolute top-0 left-0 right-0 h-2 bg-gradient-to-b from-white to-transparent mr-6" />
                     <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-t from-white to-transparent" />
                 </div>
 
+                {/* Tutorial navigation buttons */}
                 <CardFooter className="flex justify-between mt-auto px-6 pb-4">
                     <Button variant="outline" onClick={prevStep} disabled={currentStep === 0}>
                         <ChevronLeftIcon className="mr-2 h-4 w-4" /> Previous
@@ -265,6 +266,6 @@ export function TutorialSplash({ onClose }: { onClose: () => void }) {
                 </CardFooter>
             </Card>
         </div>
-    )
+    );
 }
 

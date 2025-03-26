@@ -6,11 +6,13 @@ import { KnowledgeGraph } from '@/app/lib/types';
 import { NextResponse } from 'next/server';
 import { Redis } from "@upstash/redis";
 
+// Set redis credentials
 const redis = new Redis({
     url: process.env.UPSTASH_REDIS_REST_URL!,
     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+// Zod schema for validating structured object response
 const GraphSchema = z.object({
     nodes: z.array(
         z.object({
@@ -29,6 +31,7 @@ const GraphSchema = z.object({
 
 export const maxDuration = 60;
 
+// API route for sending a structured object generation request to an AI SDK provider model
 export async function POST(req: Request) {
     try {
         const {
@@ -50,7 +53,10 @@ export async function POST(req: Request) {
         } = await req.json();
 
         let modelFunction;
+        // If the demo is active, validate fingerprint before sending
         if (isDemoActive) {
+
+            // Handle missing fingerprint
             if (!fingerprintId) {
                 return new NextResponse(JSON.stringify({ error: "Fingerprint ID missing." }), {
                     status: 400,
@@ -58,6 +64,7 @@ export async function POST(req: Request) {
                 });
             }
 
+            // Handle fingerprint not in db (must be initialized by this point)
             const exists = await redis.exists(fingerprintId);
             if (!exists) {
                 return new NextResponse(JSON.stringify({ error: "Fingerprint not initialized." }), {
@@ -66,6 +73,7 @@ export async function POST(req: Request) {
                 });
             }
 
+            // Handle usage exceeded for this fingerprint
             const usageCount = await redis.incr(fingerprintId);
             const maxUsage = 5;
             if (usageCount > maxUsage) {
@@ -74,8 +82,11 @@ export async function POST(req: Request) {
                     headers: { "Content-Type": "application/json" },
                 });
             }
+
+            // If fingerprint was verified, set the model function for demo
             modelFunction = openai("gpt-4o");
         }
+        // If not in demo mode, use the user's provided API key for the request
         else {
             if (!apiKey) {
                 return new NextResponse(JSON.stringify({ error: "API key is missing." }), {
@@ -83,10 +94,12 @@ export async function POST(req: Request) {
                     headers: { "Content-Type": "application/json" },
                 });
             }
+            // Set API key for OpenAI
             if (selectedProvider === "openai") {
                 process.env.OPENAI_API_KEY = apiKey;
                 modelFunction = openai(selectedGraphModel);
             }
+            // Set API key for Anthropic
             else if (selectedProvider === "anthropic") {
                 process.env.ANTHROPIC_API_KEY = apiKey;
                 modelFunction = anthropic(selectedGraphModel);
@@ -99,6 +112,7 @@ export async function POST(req: Request) {
             }
         }
 
+        // Graph generation prompts for existing and new graphs
         const graph_prompt = (existingGraph && existingGraph.nodes.length > 0)
             ? `You are updating an existing knowledge graph based on the latest message in a conversation between a user and an assistant..
 The graph consists of an array of **nodes (concepts)** and an array of **edges (relationships between concepts)**. Your goal is to create a living history of the conversation by 
@@ -162,6 +176,8 @@ Your goal is to create a living history of the conversation by summarizing key i
 
 **Return JSON ONLY—NO explanation.**`;
 
+        // Send request for graph object generation
+        // Will validate against graph schema and fail if response violates the schema
         const result = await generateObject({
             model: modelFunction,
             prompt: graph_prompt,
@@ -172,6 +188,7 @@ Your goal is to create a living history of the conversation by summarizing key i
     } catch (error) {
         console.error("API Error caught in route.ts:", error);
 
+        // If there was an error related to the API call, set a detialed error message for the UI
         if (APICallError.isInstance(error)) {
             const status = error.statusCode;
 

@@ -1,6 +1,7 @@
 import { Message } from 'ai';
 import type { NodeObject, LinkObject} from 'react-force-graph-2d';
 
+// Custom types for conversations and pure (data model) graphs and UI graphs
 export interface Conversation {
     id: string;
     title: string;
@@ -60,5 +61,5 @@ export interface ColorPalette {
     colors: string[];
     nodeHighlight: string;
     linkHighlight: string;
-    textColor: "black" | "white";
+    textColor: "#555" | "white";
 }

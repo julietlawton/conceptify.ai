@@ -1,6 +1,7 @@
 import { type Components } from 'react-markdown';
 import Link from 'next/link';
 
+// Custom component styling for react markdown (used in hover cards and graph summaries)
 export const mdxComponents: Partial<Components> = {
     ol: ({ children, ...props }) => {
         return (

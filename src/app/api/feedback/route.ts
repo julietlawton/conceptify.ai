@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 
 export const maxDuration = 60;
 
+// API route for sending user feedback with nodemailer
 export async function POST(req: Request) {
     const { feedbackMessage }: { feedbackMessage: string } = await req.json();
 

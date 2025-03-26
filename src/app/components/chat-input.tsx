@@ -8,6 +8,7 @@ interface ChatInputProps {
     handleStopGeneration: () => void;
 }
 
+// Chat input component
 function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [inputValue, setInputValue] = useState("");
@@ -20,7 +21,7 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
         }
     };
 
-    // Use onInput so that the height adjusts as the user types
+    // Adjust input container height as user types
     const handleInput = () => {
         if (textareaRef.current) {
             setInputValue(textareaRef.current.value);
@@ -33,8 +34,9 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
         if (e.key === "Enter" && !e.shiftKey && !isLoading) {
             e.preventDefault();
             if (inputValue.trim()) {
+                // Send message and clear state
                 sendMessage(inputValue.trim());
-                setInputValue(""); // Clear state
+                setInputValue("");
                 if (textareaRef.current) {
                     textareaRef.current.value = "";
                     adjustHeight();
@@ -43,11 +45,12 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
         }
     };
 
-    // Handle button click
+    // Handle send button click
     const handleClick = () => {
         if (inputValue.trim() && !isLoading) {
+            // Send message and clear input
             sendMessage(inputValue.trim());
-            setInputValue(""); // Clear state
+            setInputValue("");
             if (textareaRef.current) {
                 textareaRef.current.value = "";
                 adjustHeight();
@@ -57,6 +60,7 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
 
     return (
         <div className="w-full max-w-5xl mx-auto flex items-center p-3 bg-gray-100 border-gray-300 rounded-xl shadow-md sticky bottom-0">
+            {/* Chat input text area */}
             <textarea
                 ref={textareaRef}
                 id="chatInput"
@@ -69,6 +73,7 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
                 onKeyDown={handleKeyDown}
             />
             <div className="px-2">
+                {/* When a message is streaming, change the send message button to a stop streaming button */}
                 {isLoading ? (
                     <TooltipProvider>
                         <Tooltip>
@@ -85,6 +90,7 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
                     </TooltipProvider>
 
                 ) : (
+                    // Send message button - disabled when text area is empty
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -106,4 +112,5 @@ function ChatInput({ sendMessage, isLoading, handleStopGeneration }: ChatInputPr
     );
 }
 
+// Memoize component
 export default React.memo(ChatInput);

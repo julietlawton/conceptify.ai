@@ -71,7 +71,6 @@
   }
 }
 
-/* Add rules for code blocks within .prose */
 @layer utilities {
 
   .prose pre,

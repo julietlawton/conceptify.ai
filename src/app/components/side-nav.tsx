@@ -1,17 +1,18 @@
 "use client";
+import { useEffect, useState } from "react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { PlusIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/solid';
 import { Cog8ToothIcon } from '@heroicons/react/24/outline';
-import { useChat } from "../context/ChatContext";
-import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import SettingsDialog from "./settings-dialog";
-import { DialogDescription } from "@radix-ui/react-dialog";
-import { useApiKey } from "../context/APIContext";
+import SettingsDialog from "@/app/components/settings-dialog";
+import { useChat } from "@/app/context/ChatContext";
+import { useApiKey } from "@/app/context/APIContext";
 
+// Side navigation bar component
 export default function SideNav() {
+    // Conversation context
     const {
         conversations,
         setConversations,
@@ -22,18 +23,23 @@ export default function SideNav() {
         getLastMessageTime
     } = useChat();
 
+    // Demo context
     const { isDemoActive, demoUsesRemaining } = useApiKey();
 
+    // Rename conversation state
     const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
     const [newChatName, setNewChatName] = useState("");
     const [editingChatId, setEditingChatId] = useState<string | null>(null);
 
+    // Settings dialog state
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+    // Handle deleting a conversation
     const handleDeleteConversation = (conversationId: string) => {
+        // Remove this conversation from conversations
         setConversations((prev) => {
             const updated = { ...prev };
-            delete updated[conversationId]; // Remove from state
+            delete updated[conversationId];
             return updated;
         });
 
@@ -44,12 +50,14 @@ export default function SideNav() {
         }
     };
 
+    // Handle changing the name of a conversation
     const handleEditChatName = (conversationId: string, currentTitle: string) => {
         setNewChatName(currentTitle);
         setEditingChatId(conversationId);
         setIsRenameDialogOpen(true);
     };
 
+    // Handle edit chat name submission
     const handleSaveChatName = () => {
         if (editingChatId) {
             setConversations((prev) => ({
@@ -61,6 +69,7 @@ export default function SideNav() {
         setEditingChatId(null);
     };
 
+    // Hook to automatically open the settings dialog, used by forgot password
     useEffect(() => {
         const shouldOpenSettings = localStorage.getItem("openSettingsOnLoad") === "true";
         if (shouldOpenSettings) {
@@ -73,6 +82,7 @@ export default function SideNav() {
         <div className="w-64 min-64 flex h-full flex-col bg-gray-100 border-r border-gray-200">
             <div className="flex items-center justify-between px-4 py-5">
                 <h2 className="text-lg font-bold">Chats</h2>
+                {/* Create new chat button */}
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -89,11 +99,12 @@ export default function SideNav() {
             </div>
 
             <div className="w-64 flex flex-col space-y-2 overflow-y-auto">
+                {/* For every chat in the sorted conversations, create a button with the name of that conversation */}
                 {Object.keys(conversations).length > 0 ? (
                     Object.values(conversations)
                         .sort((a, b) => getLastMessageTime(b) - getLastMessageTime(a))
                         .map((conv) => (
-                            //Object.values(conversations).map((conv) => (
+                            // On click, switch to the conversation clicked on
                             <div
                                 key={conv.id}
                                 className={`p-2 cursor-pointer hover:bg-gray-200 flex items-center justify-between relative group
@@ -103,6 +114,7 @@ export default function SideNav() {
                                 <span className="truncate pl-4 flex-grow">{conv.title}</span>
 
                                 <TooltipProvider>
+                                    {/* Edit chat name button */}
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <button
@@ -119,6 +131,8 @@ export default function SideNav() {
                                             <p>Edit Name</p>
                                         </TooltipContent>
                                     </Tooltip>
+
+                                    {/* Delete chat button */}
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <button
@@ -140,19 +154,22 @@ export default function SideNav() {
                             </div>
                         ))
                 ) : (
+                    // While conversations is empty, show temporary loading state
                     <div className="p-4 w-full text-gray-400">
                         <span className="block w-full truncate text-center px-4">Loading...</span>
                     </div>
                 )}
             </div>
             <div className="flex-grow"></div>
-
+            
+            {/* If the demo is active, show a message with the number of uses left */}
             {isDemoActive && (
                 <div className="text-md text-gray-500 text-center px-6 py-2 mt-4 mb-6">
                     Demo is active. You have {demoUsesRemaining} action{demoUsesRemaining !== 1 ? "s" : ""} remaining.
                 </div>
             )}
 
+            {/* Settings menu button */}
             <div className="border-t">
                 <button
                     onClick={() => setIsSettingsOpen(true)}
@@ -163,11 +180,12 @@ export default function SideNav() {
                 </button>
             </div>
 
+            {/* Edit chat name dialog */}
             <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Edit Chat Name</DialogTitle>
-                        <DialogDescription className="text-sm text-gray-500">Change the name of this chat.</DialogDescription>
+                        <DialogDescription>Change the name of this chat.</DialogDescription>
                     </DialogHeader>
                     <div className="p-4">
                         <Input

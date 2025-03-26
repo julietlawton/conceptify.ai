@@ -2,7 +2,6 @@
 import { useCallback, useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import 'katex/dist/katex.min.css';
-import { GraphToolbar } from "./graph-toolbar";
 import {
     Dialog,
     DialogContent,
@@ -11,18 +10,20 @@ import {
     DialogFooter,
     DialogDescription,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useChat, useCurrentGraph } from "../context/ChatContext";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
 import { v4 as uuidv4 } from 'uuid';
-
-const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
-import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
+import { inter } from "@/app/ui/fonts";
+import { useChat, useCurrentGraph } from "@/app/context/ChatContext";
+import { colorPaletteById } from "@/app/ui/color-palettes";
+import { NodeTooltip } from "@/app/components/node-tooltip";
+import SummaryCard from "@/app/components/summary-card";
+import GraphToolbar from "@/app/components/graph-toolbar";
 import {
     KnowledgeGraph,
     UIGraphNode,
@@ -30,12 +31,13 @@ import {
     UIGraph,
     NodeEdge,
     ColorPalette
-} from "../lib/types";
-import { inter } from "../ui/fonts";
-import { colorPaletteById } from "../ui/color-palettes";
-import { NodeTooltip } from "./node-tooltip";
-import SummaryCard from "./summary-card";
+} from "@/app/lib/types";
 
+const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
+import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
+
+
+// Custom type for updating node data (used for adding and editing nodes)
 interface NewNodeData {
     name: string;
     info: string;
@@ -43,6 +45,7 @@ interface NewNodeData {
     edges: NodeEdge[];
 }
 
+// Helper function to convert a UIGraph to a KnowledgeGraph
 function stripUIGraph(uiGraph: UIGraph): KnowledgeGraph {
     return {
         nodes: uiGraph.nodes.map((node) => ({
@@ -66,6 +69,7 @@ function stripUIGraph(uiGraph: UIGraph): KnowledgeGraph {
     };
 }
 
+// Interactive graph visualizer component
 export default function NetworkGraph({
     isFullScreen,
     isGraphVisible,
@@ -75,6 +79,8 @@ export default function NetworkGraph({
     isGraphVisible: boolean,
     onToggleFullScreen: () => void
 }) {
+
+    // Conversation context
     const {
         currentConversationId,
         getConversationTitle,
@@ -85,28 +91,34 @@ export default function NetworkGraph({
         redoStackLength
     } = useChat();
 
+    // Graph context
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
+    // UI Graph state - used to separate pure graph (data only) and UI concerns
+    // Initialize by cloning current graph data
     const [uiGraphData, setUiGraphData] = useState<UIGraph>(() => {
         // Clone the pure data
         const cloned = JSON.parse(JSON.stringify(graphData));
         return cloned;
     });
-
     const nodeColorMapRef = useRef<Map<string, string>>(new Map());
+    const [highlightNodes, setHighlightNodes] = useState(new Set());
+    const [highlightLinks, setHighlightLinks] = useState(new Set());
+    const [hoverNode, setHoverNode] = useState<UIGraphNode | null>(null);
 
-    const [highlightNodes, setHighlightNodes] = useState(new Set())
-    const [highlightLinks, setHighlightLinks] = useState(new Set())
-    const [hoverNode, setHoverNode] = useState<UIGraphNode | null>(null)
-    const [selectedNode, setSelectedNode] = useState<UIGraphNode | null>(null)
-    const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-    const [isDialogOpen, setIsDialogOpen] = useState(false)
-    const [dialogMode, setDialogMode] = useState<"add" | "edit">("add")
-    const [newNodeData, setNewNodeData] = useState<NewNodeData>({ name: "", info: "", showRelationships: false, edges: [] })
+    // View state
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const graphRef = useRef<HTMLDivElement | null>(null);
     const forceGraphRef = useRef<ForceGraphMethods | undefined>(undefined);
-    const [typedLetter, setTypedLetter] = useState<string>("");
 
+    // Add/edit dialog state
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [dialogMode, setDialogMode] = useState<"add" | "edit">("add");
+    const [newNodeData, setNewNodeData] = useState<NewNodeData>({ name: "", info: "", showRelationships: false, edges: [] });
+    const [typedLetter, setTypedLetter] = useState<string>("");
+    const [selectedNode, setSelectedNode] = useState<UIGraphNode | null>(null);
+
+    // Graph summary card state
     const [isSummaryCardVisible, setIsSummaryCardVisible] = useState(false);
     const [isSummaryLoading, setIsSummaryLoading] = useState(false);
     const [summaryContent, setSummaryContent] = useState<string[]>([]);
@@ -118,6 +130,8 @@ export default function NetworkGraph({
         }
     };
 
+    // If the use types a letter, jump to the first node that matches that letter alphabetically
+    // Used for node edges dropdown
     useEffect(() => {
         if (typedLetter) {
             const matchedNode = graphData.nodes
@@ -138,6 +152,7 @@ export default function NetworkGraph({
         }
     }, [typedLetter, graphData.nodes]);
 
+    // Update graph dimensions when window resizes
     const updateDimensions = useCallback(() => {
         if (graphRef.current) {
             setDimensions({
@@ -145,34 +160,35 @@ export default function NetworkGraph({
                 height: graphRef.current.offsetHeight,
             })
         }
-    }, [])
+    }, []);
 
     useEffect(() => {
         updateDimensions();
         window.addEventListener("resize", updateDimensions);
         return () => window.removeEventListener("resize", updateDimensions);
-    }, [updateDimensions])
+    }, [updateDimensions]);
 
+    // When the graph data changes, clone it again for the UI graph
     useEffect(() => {
-        // Clone pure graph data and add default value for showRelationships
         setSelectedNode(null);
         const cloned = JSON.parse(JSON.stringify(graphData));
         setUiGraphData(cloned);
     }, [graphData]);
 
+    // Clear color assignments when palette changes
     useEffect(() => {
-        // Clear color assignments when palette changes
         nodeColorMapRef.current.clear();
     }, [uiGraphData.settings.colorPaletteId]);
 
+    // Define node hover behavior
     const handleNodeHover = useCallback(
         (node: NodeObject | null) => {
             const typedNode = node as UIGraphNode | null;
 
-            // Set highlight for the hovered node, if any
+            // Set highlight for the hovered node
             setHighlightNodes(new Set(node ? [node.id] : []));
 
-            // Filter links that involve the hovered node, safely extracting IDs
+            // Filter and set links that include the hovered node
             setHighlightLinks(
                 new Set(
                     typedNode
@@ -207,9 +223,11 @@ export default function NetworkGraph({
             // Set the hover state
             setHoverNode(typedNode);
 
+            // Freeze hover node position by setting fixed coordinates with current position
             if (typedNode) {
                 typedNode.fx = typedNode.x;
                 typedNode.fy = typedNode.y;
+                // Once the user stops hovering, reset fixed position
             } else {
                 uiGraphData.nodes.forEach((n) => {
                     n.fx = undefined;
@@ -225,11 +243,13 @@ export default function NetworkGraph({
         [uiGraphData.links, uiGraphData.nodes]
     );
 
+    // Set selected node on click
     const handleNodeClick = useCallback((node: NodeObject) => {
         const typedNode = node as UIGraphNode;
         setSelectedNode(typedNode);
-    }, [])
+    }, []);
 
+    // Define link hover behavior
     const handleLinkHover = useCallback((link: LinkObject | null) => {
         const typedLink = link as UIGraphLink;
         if (!typedLink) {
@@ -237,6 +257,8 @@ export default function NetworkGraph({
             setHighlightLinks(new Set());
             return;
         }
+
+        // Get source and target nodes for this link
         const sourceId =
             typeof typedLink.source === "object" && typedLink.source
                 ? typedLink.source.id
@@ -246,12 +268,16 @@ export default function NetworkGraph({
                 ? typedLink.target.id
                 : typedLink.target;
 
+        // Highlight link and source and target nodes
         setHighlightNodes(new Set([sourceId, targetId].filter(Boolean) as string[]));
         setHighlightLinks(new Set([typedLink.id || `${sourceId}-${targetId}`]));
-    }, [])
+    }, []);
 
+    // Define node color on color palette change
     const nodeColor = useCallback((node: NodeObject) => {
         const typedNode = node as UIGraphNode;
+
+        // Get the palette from the graph settings
         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
 
         // Check if color already assigned
@@ -262,46 +288,54 @@ export default function NetworkGraph({
         // Assign color based on current count
         const assignedCount = nodeColorMapRef.current.size;
         const color = palette.colors[assignedCount % palette.colors.length];
+
+        // Add this node and its assigned color to the color map
         nodeColorMapRef.current.set(typedNode.id, color);
 
         return color;
     }, [uiGraphData.settings.colorPaletteId]);
 
-    const linkColor = useCallback(
-        (link: LinkObject) => {
-            const typedLink = link as UIGraphLink;
-            const sourceId =
-                typeof typedLink.source === "object" && typedLink.source
-                    ? typedLink.source.id
-                    : typedLink.source;
-            const targetId =
-                typeof typedLink.target === "object" && typedLink.target
-                    ? typedLink.target.id
-                    : typedLink.target;
+    // Define link color on color palette change
+    const linkColor = useCallback((link: LinkObject) => {
+        const typedLink = link as UIGraphLink;
+        const sourceId =
+            typeof typedLink.source === "object" && typedLink.source
+                ? typedLink.source.id
+                : typedLink.source;
+        const targetId =
+            typeof typedLink.target === "object" && typedLink.target
+                ? typedLink.target.id
+                : typedLink.target;
 
-            const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
-            const linkHighlightColor = palette.linkHighlight ?? colorPaletteById.defaultPalette.linkHighlight;
-            return highlightLinks.has(typedLink.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde"
-        },
-        [highlightLinks, uiGraphData.settings.colorPaletteId],
-    )
+        // Get palette from the graph settings
+        const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
 
+        // Set link highlight color based on palette
+        const linkHighlightColor = palette.linkHighlight ?? colorPaletteById.defaultPalette.linkHighlight;
+        return highlightLinks.has(typedLink.id || `${sourceId}-${targetId}`) ? linkHighlightColor : " #dedfde";
+
+    }, [highlightLinks, uiGraphData.settings.colorPaletteId]);
+
+    // On reset view, zoom to fit the graph container 
     const handleResetView = useCallback(() => {
         if (forceGraphRef.current) {
             forceGraphRef.current.zoomToFit();
         }
-    }, [])
+    }, []);
 
+    // On add, set the dialog mode to add and initialize new node data
     const handleAddNode = () => {
         setDialogMode("add");
         setNewNodeData({ name: "", info: "", showRelationships: false, edges: [] });
         setIsDialogOpen(true);
     }
 
+    // On edit, set the dialog mode to edit and fill in node data
     const handleEditNode = () => {
         if (selectedNode) {
             setDialogMode("edit");
 
+            // Get edges for this node
             const nodeEdges: NodeEdge[] = uiGraphData.links
                 .filter((link) => {
                     const sourceId =
@@ -323,6 +357,7 @@ export default function NetworkGraph({
                     };
                 });
 
+            // Initialize new node data with the information for this node
             setNewNodeData({
                 name: selectedNode.name,
                 info: selectedNode.info,
@@ -331,13 +366,16 @@ export default function NetworkGraph({
             });
             setIsDialogOpen(true);
         }
-    }
+    };
 
+    // Handle delete node
     const handleDeleteNode = () => {
         if (selectedNode) {
 
+            // Add this action to the undo stack
             addActionToUndoStack();
 
+            // Get new graph nodes and links without the selected node
             const newNodes = uiGraphData.nodes.filter(
                 (node) => node.id !== selectedNode.id
             );
@@ -349,20 +387,25 @@ export default function NetworkGraph({
                 return sourceId !== selectedNode.id && targetId !== selectedNode.id;
             });
 
+            // Copy current settings and remove this node from show relationships dict
             const currentSettings = uiGraphData.settings;
             const newShowRelationships = Object.fromEntries(
                 Object.entries(currentSettings.showNodeRelationships).filter(
                     ([key]) => key !== selectedNode.id
                 )
             );
+
+            // Set new settings
             const newSettings = {
                 ...currentSettings,
                 showNodeRelationships: newShowRelationships,
             };
 
+            // Create new UI graph
             const newUIGraph: UIGraph = { nodes: newNodes, links: newLinks, settings: newSettings };
-            const pureGraph = stripUIGraph(newUIGraph);
 
+            // Strip UI graph and update the conversation graph data
+            const pureGraph = stripUIGraph(newUIGraph);
             if (currentConversationId) {
                 updateConversationGraphData(currentConversationId, pureGraph);
             }
@@ -371,13 +414,19 @@ export default function NetworkGraph({
         }
     };
 
+    // Handle add and edit dialog submit
     const handleDialogSubmit = () => {
-        const avgX = uiGraphData.nodes.reduce((sum, node) => sum + (node.x ?? 0), 0) / uiGraphData.nodes.length
-        const avgY = uiGraphData.nodes.reduce((sum, node) => sum + (node.y ?? 0), 0) / uiGraphData.nodes.length
+        // Get average x and y positions to position new nodes
+        const avgX = uiGraphData.nodes.reduce((sum, node) => sum + (node.x ?? 0), 0) / uiGraphData.nodes.length;
+        const avgY = uiGraphData.nodes.reduce((sum, node) => sum + (node.y ?? 0), 0) / uiGraphData.nodes.length;
 
+        // Add this action (either add or edit) to undo stack
         addActionToUndoStack();
 
+        // Add node operation
         if (dialogMode === "add") {
+
+            // Create a new node with the entered new node data and position it relative to the existing nodes
             const newNode = {
                 id: uuidv4(),
                 name: newNodeData.name,
@@ -387,18 +436,17 @@ export default function NetworkGraph({
                 y: avgY + (Math.random() - 0.5) * 100,
             }
 
-            // Convert each simplified edge in newNodeData into a full graph link.
-            // Look up the "other" node using edge.nodeId.
+            // Convert each simplified edge in newNodeData into a full graph link
             const newLinks = newNodeData.edges
                 .map((edge) => {
+                    // Get the other node this node links with
                     const otherNode = uiGraphData.nodes.find((node) => node.id === edge.nodeId);
                     if (!otherNode) {
                         console.warn("Other node not found for edge", edge);
                         return null;
                     }
                     return {
-                        // If the new node should be the source, then the link's source is newNode
-                        // and the target is the other node; vice versa otherwise.
+                        // Set new node as either the source or target for each link
                         source: edge.direction === "source" ? newNode : otherNode,
                         target: edge.direction === "target" ? newNode : otherNode,
                         label: edge.label,
@@ -406,6 +454,7 @@ export default function NetworkGraph({
                 })
                 .filter((link) => link !== null);
 
+            // Copy current settings and add the realtions for this node to show relationships dict
             const currentSettings = uiGraphData.settings;
 
             const updatedShowRelationships = {
@@ -418,19 +467,23 @@ export default function NetworkGraph({
                 showNodeRelationships: updatedShowRelationships,
             };
 
+            // Update UI graph
             const newUIGraph: UIGraph = {
                 nodes: [...uiGraphData.nodes, newNode],
                 links: [...uiGraphData.links, ...newLinks],
                 settings: newSettings
             };
-            const pureGraph = stripUIGraph(newUIGraph);
 
+            // Update conversation graph
+            const pureGraph = stripUIGraph(newUIGraph);
             if (currentConversationId) {
                 updateConversationGraphData(currentConversationId, pureGraph);
             }
 
-
+            // Edit node operation
         } else if (dialogMode === "edit" && selectedNode) {
+
+            // Update graph nodes and links with new node data for this node
             const updatedNodes = uiGraphData.nodes.map((node) =>
                 node.id === selectedNode.id
                     ? {
@@ -441,7 +494,6 @@ export default function NetworkGraph({
                     : node,
             );
             const updatedLinks = uiGraphData.links.filter((link) => {
-                // Safely extract IDs from the link
                 const sourceId = typeof link.source === "object" && link.source ? link.source.id : link.source;
                 const targetId = typeof link.target === "object" && link.target ? link.target.id : link.target;
                 // Remove all edges that involve the selected node
@@ -462,7 +514,7 @@ export default function NetworkGraph({
                     // Ensure sourceId and targetId are valid
                     if (!sourceId || !targetId) return null;
 
-                    // Check if an edge already exists between these nodes in updatedLinks.
+                    // Check if an edge already exists between these nodes
                     const edgeAlreadyExists = updatedLinks.some((link) => {
                         const existingSource =
                             typeof link.source === "object" && link.source ? link.source.id : link.source;
@@ -484,8 +536,8 @@ export default function NetworkGraph({
                 })
                 .filter((link): link is UIGraphLink => link !== null);
 
+            // Update settings
             const currentSettings = uiGraphData.settings;
-
             const updatedShowRelationships = {
                 ...currentSettings.showNodeRelationships,
                 [selectedNode.id]: newNodeData.showRelationships,
@@ -496,13 +548,14 @@ export default function NetworkGraph({
                 showNodeRelationships: updatedShowRelationships,
             };
 
+            // Update UI graph and conversation graph
             const newUIGraph: UIGraph = {
                 nodes: updatedNodes,
                 links: [...updatedLinks, ...newLinks],
                 settings: newSettings
             };
-            const pureGraph = stripUIGraph(newUIGraph);
 
+            const pureGraph = stripUIGraph(newUIGraph);
             if (currentConversationId) {
                 updateConversationGraphData(currentConversationId, pureGraph);
             }
@@ -510,35 +563,40 @@ export default function NetworkGraph({
             setSelectedNode(null);
         }
         setIsDialogOpen(false);
-    }
+    };
 
+    // Add edge
     const handleAddEdge = () => {
         setNewNodeData((prev) => ({
             ...prev,
             edges: [...prev.edges, { nodeId: "", label: "", direction: "source" }],
-        }))
-    }
+        }));
+    };
 
+    // Remove edge
     const handleRemoveEdge = (index: number) => {
         setNewNodeData((prev) => ({
             ...prev,
             edges: prev.edges.filter((_, i) => i !== index),
-        }))
-    }
+        }));
+    };
 
+    // Update edge
     const handleEdgeChange = (index: number, field: string, value: string) => {
         setNewNodeData((prev) => ({
             ...prev,
             edges: prev.edges.map((edge, i) => (i === index ? { ...edge, [field]: value } : edge)),
-        }))
-    }
+        }));
+    };
 
+    // On delete graph, clear the graph data for this conversation
     const handleDeleteGraph = () => {
         if (currentConversationId) {
             updateConversationGraphData(currentConversationId, null);
         }
     };
 
+    // Handle selecting a node in the search results
     const handleSearchSelect = (node: UIGraphNode) => {
         if (forceGraphRef.current && node) {
             const graphContainer = document.getElementById('graph-container');
@@ -561,9 +619,10 @@ export default function NetworkGraph({
         }
     };
 
+    // On color palette change, 
     const handleColorPaletteSelect = (palette: ColorPalette) => {
         if (currentConversationId && uiGraphData.settings) {
-            // Create a new graph object with updated settings:
+            // Create a new graph object with updated settings
             const newGraph = {
                 ...uiGraphData,
                 settings: {
@@ -571,20 +630,26 @@ export default function NetworkGraph({
                     colorPaletteId: palette.id,
                 },
             };
+
+            // Update conversation graph data
             const pureGraph = stripUIGraph(newGraph);
             updateConversationGraphData(currentConversationId, pureGraph);
         }
     };
 
+    // Handle graph summary creation
     const handleGenerateSummary = () => {
         if (!currentConversationId || !graphData) return;
 
+        // Set card state
         setIsSummaryLoading(true);
         setIsSummaryCardVisible(true);
 
         setTimeout(() => {
             const { nodes, links } = graphData;
 
+            // Get outgoing links for this node
+            // Incoming links aren't shown so each relation only appears once in the summary
             const outgoingLinksMap: Record<string, { relation: string, targetName: string }[]> = {};
             nodes.forEach((node) => { outgoingLinksMap[node.id] = []; });
 
@@ -599,20 +664,22 @@ export default function NetworkGraph({
                 }
             });
 
+            // Build summary by joining each node's name, information, and outgoing relations
             const summaryBlocks = nodes.map((node) => {
                 let block = `## ${node.name}\n${node.info}\n\n`;
-              
+
                 const related = outgoingLinksMap[node.id];
                 if (related.length > 0) {
-                  block += `**Related Concepts:**\n\n`;
-                  related.forEach(rel => {
-                    block += `→ *${rel.relation}* ${rel.targetName}\n\n`;
-                  });
+                    block += `**Related Concepts:**\n\n`;
+                    related.forEach(rel => {
+                        block += `→ *${rel.relation}* ${rel.targetName}\n\n`;
+                    });
                 }
-              
+
                 return block.trim();
-              });
-              
+            });
+
+            // Set summary content
             setSummaryContent(summaryBlocks);
             setIsSummaryLoading(false);
         }, 400);
@@ -620,6 +687,7 @@ export default function NetworkGraph({
 
     return (
         <div id="graph-container" ref={graphRef} className="h-full w-full flex flex-col relative">
+            {/* Graph toolbar */}
             <GraphToolbar
                 onAddNode={handleAddNode}
                 onEditNode={handleEditNode}
@@ -640,6 +708,7 @@ export default function NetworkGraph({
                 onGenerateSummary={handleGenerateSummary}
             />
             <div className={`flex-grow transition-opacity duration-400 ${isGraphVisible ? "visible opacity-100" : "invisible opacity-0"}`}>
+                {/* Force graph simulation */}
                 <ForceGraph2D
                     ref={forceGraphRef}
                     graphData={uiGraphData}
@@ -653,6 +722,7 @@ export default function NetworkGraph({
                     nodeRelSize={6}
                     width={dimensions.width}
                     height={dimensions.height}
+                    // Simulation behavior
                     d3VelocityDecay={0.5}
                     {...({
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -663,12 +733,14 @@ export default function NetworkGraph({
                         }
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } as any)}
+                    // Node display properties
                     nodeCanvasObject={(node, ctx, globalScale) => {
+                        // Set font for node labels
                         const label = node.name;
                         const fontSize = 14 / globalScale;
                         ctx.font = `600 ${fontSize}px ${inter.style.fontFamily}`;
 
-                        // Maximum width allowed for a line (adjust as needed)
+                        // Maximum width allowed for a line
                         const maxWidth = 100 / globalScale;
                         const lineHeight = fontSize * 1.2;
 
@@ -705,7 +777,7 @@ export default function NetworkGraph({
                         });
 
                         // Set node size based on the maximum wrapped line width
-                        const nodeSize = Math.max(8, maxLineWidth / 2) + 4;
+                        const nodeSize = Math.max(10, maxLineWidth / 2) + 4;
 
                         // Draw the node as a circle
                         ctx.beginPath();
@@ -713,6 +785,7 @@ export default function NetworkGraph({
                         ctx.fillStyle = nodeColor(node);
                         ctx.fill();
 
+                        // Get text color and highlight color from the palette
                         const palette = colorPaletteById[uiGraphData.settings.colorPaletteId] ?? colorPaletteById.defaultPalette;
                         const paletteTextColor = palette.textColor ?? colorPaletteById.defaultPalette.textColor;
                         const paletteNodeHighlightColor = palette.nodeHighlight ?? colorPaletteById.defaultPalette.nodeHighlight;
@@ -744,7 +817,9 @@ export default function NetworkGraph({
                     linkCanvasObjectMode={() => "after"}
                 />
             </div>
+            {/* Node hover card */}
             {hoverNode && <NodeTooltip node={hoverNode} graphData={uiGraphData} />}
+            {/* Add/edit dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[700px] w-11/12 max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
@@ -756,6 +831,7 @@ export default function NetworkGraph({
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4 px-2">
+                        {/* Node name input */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <div className="flex items-center justify-end gap-1">
                                 <Label htmlFor="name" className="whitespace-nowrap">Name</Label>
@@ -774,7 +850,8 @@ export default function NetworkGraph({
                                 className="col-span-3"
                             />
                         </div>
-
+                        
+                        {/* Node info text area */}
                         <div className="grid grid-cols-4 items-start gap-4">
                             <div className="flex items-start justify-end gap-1">
                                 <Label htmlFor="info" className="whitespace-nowrap">Info</Label>
@@ -800,7 +877,8 @@ export default function NetworkGraph({
                                 placeholder="Supports Markdown, LaTeX, code blocks, and images."
                             />
                         </div>
-
+                        
+                        {/* Node edges section */}
                         <div className="grid grid-cols-4 items-start gap-4">
                             <div className="flex items-center justify-end gap-1">
                                 <Label htmlFor="name" className="whitespace-nowrap">Edges</Label>
@@ -823,6 +901,7 @@ export default function NetworkGraph({
                                 </div>
                             </div>
                             <div className="col-span-3 space-y-4">
+                                {/* For each edge, create a drop down to select the other node, a label for the relationship, and radio buttons to set source/target */}
                                 {newNodeData.edges.map((edge, index) => (
                                     <div key={index} className="flex flex-wrap items-center gap-2">
                                         <Select value={edge.nodeId} onValueChange={(value) => handleEdgeChange(index, "nodeId", value)}>
@@ -830,6 +909,7 @@ export default function NetworkGraph({
                                                 <SelectValue placeholder="Select node" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                {/* Sort nodes in the dropdown alphabetically to enable jumping to typed letter */}
                                                 {graphData.nodes
                                                     .filter((node) => dialogMode === "edit" ? node.id !== selectedNode?.id : true)
                                                     .filter((node) =>
@@ -844,12 +924,14 @@ export default function NetworkGraph({
                                                     ))}
                                             </SelectContent>
                                         </Select>
+                                        {/* Relationship label */}
                                         <Input
                                             placeholder="Edge label"
                                             value={edge.label}
                                             onChange={(e) => handleEdgeChange(index, "label", e.target.value)}
                                             className="flex-grow min-w-[200px]"
                                         />
+                                        {/* Source/target radio buttons */}
                                         <RadioGroup
                                             value={edge.direction}
                                             onValueChange={(value) => handleEdgeChange(index, "direction", value)}
@@ -864,14 +946,17 @@ export default function NetworkGraph({
                                                 <Label htmlFor={`target-${index}`}>Target</Label>
                                             </div>
                                         </RadioGroup>
+                                        {/* Remove edge button */}
                                         <Button variant="outline" size="icon" onClick={() => handleRemoveEdge(index)}>
                                             X
                                         </Button>
                                     </div>
                                 ))}
+                                {/* Button to add an additional edge input */}
                                 <Button onClick={handleAddEdge}>Add Edge</Button>
                             </div>
                         </div>
+                        {/* Checkbox for toggling show edges */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <div className="flex items-center justify-end gap-1">
                                 <Label htmlFor="showRelationships" className="text-right">
@@ -899,11 +984,14 @@ export default function NetworkGraph({
                             </div>
                         </div>
                     </div>
+                    {/* Submit button */}
                     <DialogFooter className="sticky bottom-0 pt-2">
                         <Button onClick={handleDialogSubmit}>{dialogMode === "add" ? "Add" : "Update"}</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Floating hallucination disclaimer text for the bottom of the graph container */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-gray-600 italic px-4 py-2 rounded text-sm w-[70%] w-auto text-center">
                 LLMs can {" "}
                 <a
@@ -915,6 +1003,8 @@ export default function NetworkGraph({
                     hallucinate
                 </a>. Remember to fact check generated content.
             </div>
+
+            {/* Graph summary card */}
             {isSummaryCardVisible && (
                 <SummaryCard
                     isSummaryLoading={isSummaryLoading}

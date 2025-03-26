@@ -1,31 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { ChatProvider } from "./context/ChatContext";
+import { ChatProvider } from "@/app/context/ChatContext";
+import { ApiKeyProvider } from "@/app/context/APIContext";
 import { Toaster } from "react-hot-toast";
 import { Analytics } from '@vercel/analytics/next';
-import { ApiKeyProvider } from "./context/APIContext";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Inter } from 'next/font/google';
+import "@/app/globals.css";
+ 
+export const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: "Conceptify.AI",
-  description: "App for generating concept maps from conversations with LLMs.",
+  description: "Conceptify.AI lets you build interactive concept maps from your conversations with AI assistants - supporting meaningful learning by making it easier to visually organize ideas and recall information.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.className} antialiased`}
       >
         <ApiKeyProvider>
           <ChatProvider>

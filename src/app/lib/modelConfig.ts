@@ -1,3 +1,4 @@
+// Available settings from the model providers
 export const MODEL_PROVIDERS: Record<
   "openai" | "anthropic",
   { displayName: string; models: string[]; graphModel: string }> = {

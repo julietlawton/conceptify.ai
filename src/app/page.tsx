@@ -1,53 +1,49 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
-import Chat from "./components/chat"
-import SideNav from "@/app/components/side-nav";
-import NetworkGraph from "./components/network-graph"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect, useCallback } from "react";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Bars3Icon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
-import { useChat } from "./context/ChatContext";
-import { useApiKey } from "./context/APIContext";
-import { GraphIcon } from "./ui/icons";
-import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
-import FeedbackDialog from "./components/feedback-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DialogDescription } from "@radix-ui/react-dialog";
-import { TutorialSplash } from "./components/tutorial-splash";
+import { GraphIcon } from "@/app/ui/icons";
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, ExclamationCircleIcon } from "@heroicons/react/24/solid";
+import Chat from "@/app/components/chat";
+import SideNav from "@/app/components/side-nav";
+import NetworkGraph from "@/app/components/network-graph";
+import FeedbackDialog from "@/app/components/feedback-dialog";
+import TutorialSplash from "@/app/components/tutorial-splash";
+import { useChat } from "@/app/context/ChatContext";
+import { useApiKey } from "@/app/context/APIContext";
 
 export default function Home() {
+  // Screen size state for determining if user is on mobile
   const [isMobile, setIsMobile] = useState(false);
-  const [isVisualizerOpen, setIsVisualizerOpen] = useState(true)
-  const [isSideNavOpen, setIsSideNavOpen] = useState(true)
-  const [isGraphFullScreen, setIsGraphFullScreen] = useState(false)
-  const [isSendFeedbackOpen, setIsSendFeedbackOpen] = useState(false)
-  const { currentConversationId, conversations, coldStartGraph } = useChat();
+
+  // UI state for layout/navigation
+  const [isVisualizerOpen, setIsVisualizerOpen] = useState(true);
+  const [isSideNavOpen, setIsSideNavOpen] = useState(true);
+  const [graphVisible, setGraphVisible] = useState(true);
+  const [isGraphFullScreen, setIsGraphFullScreen] = useState(false);
+  const [isSendFeedbackOpen, setIsSendFeedbackOpen] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // API key state
   const { passphrase, setPassphrase, decryptApiKey } = useApiKey();
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
-
   const [passwordInput, setPasswordInput] = useState("");
   const [invalidPassword, setInvalidPassword] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
 
+  // Graph/conversation state
+  const { currentConversationId, conversations, coldStartGraph } = useChat();
   const graphData = currentConversationId ? conversations[currentConversationId]?.graphData || null : null;
-  const [graphVisible, setGraphVisible] = useState(true);
 
-  const [showTutorial, setShowTutorial] = useState(false)
-
+  // Force a resize event to trigger graph layout recalculations
   const handleResize = useCallback(() => {
-    window.dispatchEvent(new Event("resize"))
-  }, [])
+    window.dispatchEvent(new Event("resize"));
+  }, []);
 
-  useEffect(() => {
-    const storedKey = localStorage.getItem("apiKey");
-    const encrypted = localStorage.getItem("isApiKeyEncrypted") === "true";
-
-    if (storedKey && encrypted && !passphrase) {
-      setShowPasswordDialog(true);
-    }
-  }, [passphrase]);
-
+  // Debounce resize trigger when visualizer or fullscreen state changes
   useEffect(() => {
     if (isVisualizerOpen || isGraphFullScreen) {
       const timer = setTimeout(handleResize, 310);
@@ -55,12 +51,7 @@ export default function Home() {
     }
   }, [isVisualizerOpen, isGraphFullScreen, handleResize]);
 
-  const toggleFullScreen = () => {
-    setGraphVisible(false);
-    setIsGraphFullScreen(prev => !prev);
-    // setTimeout(handleResize, 310);
-  };
-
+  // Check the type of device the user is accessing the page with
   useEffect(() => {
     const checkDevice = () => {
       const userAgent = navigator.userAgent.toLowerCase();
@@ -74,23 +65,41 @@ export default function Home() {
     return () => window.removeEventListener("resize", checkDevice);
   }, []);
 
+  // Check whether to show the tutorial on page load
   useEffect(() => {
     const hasSeenTutorial = localStorage.getItem("hasSeenTutorial")
     if (!hasSeenTutorial || hasSeenTutorial === "false") {
       setShowTutorial(true);
     }
-  }, [])
+  }, []);
 
+  // Toggle full screen view for graph visualizer
+  const toggleFullScreen = () => {
+    setGraphVisible(false);
+    setIsGraphFullScreen(prev => !prev);
+  };
+
+  // Close tutorial and mark it as seen
   const handleCloseTutorial = () => {
     setShowTutorial(false)
     localStorage.setItem("hasSeenTutorial", "true")
-  }
+  };
 
+  // Check if the user has provided an api key already and whether or not it is encrypted (triggers password dialog)
+  useEffect(() => {
+    const storedKey = localStorage.getItem("apiKey");
+    const encrypted = localStorage.getItem("isApiKeyEncrypted") === "true";
+
+    if (storedKey && encrypted && !passphrase) {
+      setShowPasswordDialog(true);
+    }
+  }, [passphrase]);
+
+  // Add a small delay to validate password and handle success/failure in the password dialog
   const handleUnlock = () => {
     setIsUnlocking(true);
     setPassphrase(passwordInput);
     const success = decryptApiKey(passwordInput.trim());
-    console.log(success)
 
     setTimeout(() => {
       if (!success) {
@@ -102,6 +111,7 @@ export default function Home() {
     }, 150);
   };
 
+  // If the user forgot their password, clear their key and redirect them to the settings menu
   const handleForgotPassword = () => {
     localStorage.removeItem("apiKey");
     localStorage.setItem("isApiKeyEncrypted", "false");
@@ -109,6 +119,7 @@ export default function Home() {
     window.location.reload();
   };
 
+  // If the user is on a mobile device, restrict access to the page
   if (isMobile) {
     return (
       <div className="flex flex-col items-center justify-center p-8 h-screen text-center bg-gray-500 text-white font-bold mt-[-50px]">
@@ -118,15 +129,25 @@ export default function Home() {
     );
   }
 
-
   return (
+    // Main page content
     <main className="flex h-screen overflow-hidden">
+
+      {/* Set side navigation bar visibility - hide when graph is full screen  */}
       {!isGraphFullScreen && isSideNavOpen && <SideNav />}
 
+      {/* Dynamically set the width of the chat and graph containers. Chat takes up full width (minus side nav) when graph is not open */}
+      {/* Use short ease-in-out transition to make the resize smoother */}
       <div className={`flex-grow transition-all duration-300 ease-in-out ${isVisualizerOpen && !isGraphFullScreen ? "w-1/2" : "w-full"}`} onTransitionEnd={() => setGraphVisible(true)}>
         <div className="relative h-full">
+          
+          {/* Chat component. Contains chat bubble and chat input components*/}
           <Chat />
+
+          {/* Show tutorial splash screen */}
           {showTutorial && <TutorialSplash onClose={handleCloseTutorial} />}
+
+          {/* Password dialog for users who have turned on encryption */}
           <Dialog open={showPasswordDialog}>
             <DialogContent className="[&>button]:hidden">
               <DialogHeader>
@@ -154,6 +175,7 @@ export default function Home() {
                 )}
               </div>
 
+              {/* Forgot password and submit buttons */}
               <DialogFooter className="flex justify-between items-center mt-2 gap-1">
                 <button
                   className="text-sm text-gray-500 underline hover:text-black transition"
@@ -161,7 +183,7 @@ export default function Home() {
                 >
                   Forgot Password?
                 </button>
-
+                
                 <Button onClick={handleUnlock} disabled={isUnlocking || passwordInput.trim() === ""}>
                   {isUnlocking ? "Unlocking..." : "Unlock"}
                 </Button>
@@ -171,6 +193,7 @@ export default function Home() {
 
           {!isGraphFullScreen && (
             <TooltipProvider>
+              {/* Side navigation bar toggle button */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -188,7 +211,8 @@ export default function Home() {
                 </TooltipTrigger>
                 <TooltipContent>Toggle Sidebar</TooltipContent>
               </Tooltip>
-
+              
+              {/* Graph visualizer toggle button */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -207,11 +231,13 @@ export default function Home() {
           )}
         </div>
       </div>
-
+      
+      {/* Handle smooth transition between fullscreen graph and split screen graph */}
       <div
         className={`transition-all duration-600 ease-in-out overflow-hidden border 
           ${isGraphFullScreen ? "fixed inset-0 bg-white z-50" : isVisualizerOpen ? "w-1/2 opacity-100" : "w-0 opacity-0"}`}
       >
+        {/* If the visualizer is open and there is a graph for this conversation, load it */}
         {isVisualizerOpen && graphData ? (
           <NetworkGraph
             isFullScreen={isGraphFullScreen}
@@ -219,6 +245,7 @@ export default function Home() {
             onToggleFullScreen={toggleFullScreen}
           />
         ) : (
+          // If the visualizer is open and there's no graph, show the placeholder
           isVisualizerOpen && (
             <div
               className="flex items-center justify-center h-full w-full bg-gray-100 bg-center bg-no-repeat bg-contain"
@@ -228,6 +255,7 @@ export default function Home() {
                   <GraphIcon className="w-12 h-12 text-gray-500 mx-auto" />
                   <p className="font-medium">Nothing here yet</p>
                   <p className="text-sm text-gray-400 pb-1">Start chatting to get started, or create an empty concept map.</p>
+                  {/* Button for cold starting the graph (creates an empty graph) */}
                   <button
                     className="px-4 py-2 text-sm text-white rounded-md bg-gray-500 hover:bg-black"
                     onClick={() => {
@@ -246,6 +274,7 @@ export default function Home() {
           )
         )}
       </div>
+      {/* Feedback button, always fixed in the bottom right corner */}
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -261,6 +290,7 @@ export default function Home() {
           <TooltipContent side="bottom" align="center" className="text-center">Leave <br /> Feedback</TooltipContent>
         </Tooltip>
       </TooltipProvider>
+      {/* Open feedback dialog */}
       <FeedbackDialog isSendFeedbackOpen={isSendFeedbackOpen} setIsSendFeedbackOpen={setIsSendFeedbackOpen} />
     </main>
   );

@@ -1,5 +1,6 @@
 import { ColorPalette } from "@/app/lib/types";
 
+// Color palette options for the graph
 export const ColorPalettes: ColorPalette[] = [
     {
         id: "plasma",
@@ -189,7 +190,7 @@ export const ColorPalettes: ColorPalette[] = [
         ],
         nodeHighlight: " #f6ff00",
         linkHighlight: " #FFA500",
-        textColor: "black"
+        textColor: "#555"
     },
     {
         id: "ocean",
@@ -231,6 +232,7 @@ export const ColorPalettes: ColorPalette[] = [
     },
 ];
 
+// Utility to look up color palette by string ID, with first palette used as the fallback
 export const colorPaletteById: { [id: string]: ColorPalette } = {
     ...Object.fromEntries(ColorPalettes.map(palette => [palette.id, palette])),
     defaultPalette: ColorPalettes[0],

@@ -1,11 +1,15 @@
 import { Message } from "ai";
-import { KnowledgeGraph } from "./types";
-import { MODEL_PROVIDERS } from "./modelConfig";
+import { KnowledgeGraph } from "@/app/lib/types";
+import { MODEL_PROVIDERS } from "@/app/lib/modelConfig";
 
+// Helper function for calling api/chat route (non-streaming) from the client
+// Used for title generation (does not count against demo use)
 export async function getModelResponse(messages: Message[], isDemoActive: boolean, apiKey: string | null) {
+  // Get user settings for model provider and model selection from storage
   const selectedProvider = localStorage.getItem("selectedProvider");
   const selectedChatModel = localStorage.getItem("selectedChatModel");
 
+  // Await response from the route
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,17 +29,21 @@ export async function getModelResponse(messages: Message[], isDemoActive: boolea
     throw new Error(errorMsg);
   }
 
-
+  // Get text from model response
   const { text } = await response.json();
 
   return text;
 
 }
 
+// Helper function for calling api/chat route (streaming) from the client
+// Used for send message
 export async function* streamModelResponse(messages: Message[], isDemoActive: boolean, apiKey: string | null, fingerprintId: string | null) {
+  // Get user settings for model provider and model selection from storage
   const selectedProvider = localStorage.getItem("selectedProvider");
   const selectedChatModel = localStorage.getItem("selectedChatModel");
 
+  // Await response from the route, include fingerprint if in demo mode
   try {
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -59,22 +67,24 @@ export async function* streamModelResponse(messages: Message[], isDemoActive: bo
       throw new Error(errorMsg);
     }
 
+    // Construct a stream reader from the response
     const reader = response.body?.getReader();
     if (!reader) {
       console.error("No reader found");
       throw new Error("No readable stream found");
     }
 
+    // The response will always come back 200 ok, but if there is an error the stream will close right away
+    // Check to see if the first chunk has content - if so, the stream is ok but otherwise there was an error
     const decoder = new TextDecoder();
-
     const firstResult = await reader.read();
     if (firstResult.done) {
-      // The stream ended immediately with no data.
+      // The stream ended immediately with no data
       throw new Error("Error generating response.");
     }
     const firstChunk = decoder.decode(firstResult.value, { stream: true });
 
-    // Attempt to parse the first chunk as JSON.
+    // Attempt to parse the first chunk as JSON
     try {
       const parsed = JSON.parse(firstChunk);
       if (parsed.error) {
@@ -82,14 +92,14 @@ export async function* streamModelResponse(messages: Message[], isDemoActive: bo
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_) {
-      // If parsing fails, assume the chunk is normal text.
-      // (If the first chunk isn’t valid JSON, it's likely a regular message.)
+      // If parsing fails, assume the chunk is normal text
+      // (If the first chunk isn’t valid JSON, it's likely a regular message)
     }
 
-    // Yield the first chunk and continue with the rest of the stream.
+    // Yield the first chunk and continue with the rest of the stream
     yield firstChunk;
 
-
+    // Yield each chunk in the streaming response
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -104,7 +114,7 @@ export async function* streamModelResponse(messages: Message[], isDemoActive: bo
   }
 }
 
-
+// Helper function for calling api/graph/generate route for structured graph generation
 export async function generateGraphFromMessage(requestBody: {
   assistantMessage: string;
   existingGraph?: {
@@ -112,8 +122,10 @@ export async function generateGraphFromMessage(requestBody: {
     links: { source: string; target: string; label: string }[];
   };
 }, isDemoActive: boolean, apiKey: string | null, fingerprintId: string | null) {
+  // Get model provider from saved settings
   const selectedProvider = localStorage.getItem("selectedProvider");
 
+  // If the demo is active, use openai as the model provider otherwise use the user's preference
   let selectedGraphModel;
   if (!isDemoActive) {
     selectedGraphModel = MODEL_PROVIDERS[selectedProvider as keyof typeof MODEL_PROVIDERS].graphModel;
@@ -122,6 +134,7 @@ export async function generateGraphFromMessage(requestBody: {
     selectedGraphModel = MODEL_PROVIDERS["openai"].graphModel;
   }
 
+  // Await response
   const response = await fetch("/api/graph/generate", {
     method: "POST",
     headers: {
@@ -143,7 +156,7 @@ export async function generateGraphFromMessage(requestBody: {
     throw new Error(errorMsg);
   }
 
+  // If response was ok, create a graph from it
   const newGraphData: KnowledgeGraph = await response.json();
-
   return newGraphData;
 }
