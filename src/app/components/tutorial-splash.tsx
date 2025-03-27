@@ -73,16 +73,21 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                         <li>
                             <strong>Add a message to the concept map:</strong> After sending a message, click &quot;Add to Concept Map&quot; to extract concepts from that message.
                             If the chat doesn&apos;t have a concept map yet, one will be created automatically; otherwise, the new concepts will be added to the existing map.
-                        </li>
+                        </li><br></br>
+                        <img
+                            src="/gifs/creatingconceptmap1.gif"
+                            alt="Creating a Concept Map"
+                            className="w-full max-w-xl mx-auto rounded shadow-md"
+                        /><br></br>
                         <li>
                             <strong>Create an empty concept map:</strong> To create an empty concept map, click the &quot;Create Empty Concept Map&quot; button.
                             Use this option if you want to begin building a concept map from scratch.
                         </li><br></br>
                         <img
-                            src="/gifs/creatingconceptmap.gif"
+                            src="/gifs/creatingconceptmap2.gif"
                             alt="Creating a Concept Map"
                             className="w-full max-w-xl mx-auto rounded shadow-md"
-                        />
+                        /><br></br>
                     </ul>
                 </div>
             ),
@@ -92,10 +97,10 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
             content: (
                 <div className="space-y-4">
                     <p>
-                        <strong>Pan:</strong> Click and drag on the background to move around the concept map.
+                        <strong>Zoom:</strong> Pinch (touchpad) or use the mouse wheel (mouse) to zoom in and out.
                     </p>
                     <p>
-                        <strong>Zoom:</strong> Pinch (touchpad) or use the mouse wheel (mouse) to zoom in and out.
+                        <strong>Pan:</strong> Click and drag on the background to move around the concept map.
                     </p>
                     <p>
                         <strong>Drag Nodes:</strong> Click and drag on any node to reposition it. Drag and hold to freeze a node, release to reset.
@@ -149,13 +154,13 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                         className="w-full max-w-xl mx-auto rounded shadow-md"
                     />
                     <p>
-                        <strong>Generating a Summary:</strong> To collate the node information into a single summary, click the lightbulb button. The summary can be exported as a text file or a PDF.
+                        <strong>Generating a Summary:</strong> To collate all of the node information into a single summary, click the lightbulb button. The summary can be exported as a text file or a PDF.
                     </p>
                     <img
-                        src="/gifs/colorselection.gif"
+                        src="/gifs/generatesummary.gif"
                         alt="Color Selection"
                         className="w-full max-w-xl mx-auto rounded shadow-md"
-                    />
+                    /><br></br>
                 </div>
             ),
         },
@@ -189,13 +194,6 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                         <CheckCircleIcon className="w-16 h-16" />
                     </div>
                     <p>You&apos;re ready to start using the app.</p>
-                    {/* <p>
-                        Want to learn more? Check out{" "}
-                        <a href="" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
-                        blog
-                        </a>{" "}
-                        for more info.
-                    </p> */}
                     <p>You can revisit this tutorial anytime from the Settings menu.</p>
                     <p>If you have any feedback, use the feedback button to send me a message — I&apos;d love to hear from you!</p>
                 </div>
