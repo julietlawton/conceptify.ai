@@ -12,6 +12,18 @@ Conceptify.AI lets you build interactive concept maps from your conversations wi
   
 ## Features
 
+- Create colorful, interactive concept maps from AI assistant messages that grow organically as you learn
+
+- Enrich concept descriptions with support for LaTeX, code blocks, and image links
+
+- Customize the look and content of your concept map with 12 color palettes and full editing control
+
+- Compile concept maps into concise summaries that can be exported as a PDF or text file
+
+- Free to use, no account required
+
+- Works with both OpenAI and Anthropic models
+
 ## For developers
 ### Installation
 1. Clone the repo
@@ -52,16 +64,28 @@ pnpm run dev
 
 ## FAQs
 <details>
-  <summary> Where do I get an API key? </summary>
-  <p> Answer </p>
+  <summary> <strong>Where do I get an API key?</strong> </summary>
+    <br>
+    <p> You can get an API key from OpenAI at https://platform.openai.com or from Anthropic at https://console.anthropic.com. Both providers offer a pay-as-you go pricing. </p>
 </details>
 
 <details>
-  <summary> How does graph generation work? </summary>
-  <p> Answer </p>
+  <summary><strong>How does concept map generation work?</strong></summary>
+  <br>
+  <p>
+    Conceptify.AI uses the <a href="https://sdk.vercel.ai/docs/reference/ai-sdk-core/generate-object">generateObject</a> API from the Vercel AI SDK, which allows you to define a structured object schema and pass it along with the prompt. The model is then constrained to return a response that matches this schema.
+  </p>
+  <p>
+    For concept map generation, the app sends the assistant message along with the current concept map. The model is prompted to extract new concepts from the message and intelligently connect them to existing nodes in the concept map.
+  </p>
 </details>
 
 <details>
-  <summary> Why don't you support user accounts and server-side storage? </summary>
-  <p> Answer </p>
+  <summary><strong>Why aren’t you using user accounts and server-side storage?</strong></summary>
+    <br>
+    <p>
+    To keep the app completely free to use and maintain, I chose not to support user accounts or server-side storage in the MVP. Instead, all data is stored locally in your browser. There is a minimal backend for demo rate-limiting, but it's small enough to stay within free usage tiers.  
+    <br><br>
+    In the future, I plan to turn the app into a standalone desktop app with persistent local storage — eliminating the need for accounts or cloud backend.
+    </p>
 </details>
