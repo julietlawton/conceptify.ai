@@ -108,27 +108,35 @@ export async function POST(req: Request) {
 
         // Quiz answer validation prompt
         const quizAnswerValidationPrompt = `
-        You are evaluating an answer to a quiz question.
-
+        You are evaluating a user's answer to a quiz question.
+        
         **Question:**  
         ${question}
-
-        **Given Answer:**  
+        
+        **User's Answer:**  
         ${userAnswer}
-
-        **Example of a Correct Answer:**  
-        ${exampleAnswer}
-
+        
         **Your task:**
-        - Evaluate the student's answer as exactly one of: **"correct"**, **"partiallyCorrect"**, or **"incorrect"**.
-        - Then, provide a helpful, constructive explanation for why you chose this score **addressed directly to the student**.
-        - If the answer is correct, you can still suggest ways the answer could be improved.
-
-        **Output Format (strict):**
+        - Classify the user's answer as exactly one of: **"correct"**, **"partiallyCorrect"**, or **"incorrect"**.
+          - **Correct**: Accurately and meaningfully answers the question, even if phrasing, examples, or structure differ.
+          - **PartiallyCorrect**: Shows understanding but has minor inaccuracies or misunderstandings of concepts.
+          - **Incorrect**: Major misunderstandings, factual errors, off-topic, or fails to meaningfully answer.
+        
+        **Grading rules:**
+        - Do not be punative, grade fairly.
+        - Completeness is not required unless explicitly asked for.
+        - Do not invent extra requirements beyond what is implied.
+        - Favor "correct" for reasonable answers even if they are short, concise, or use different wording.
+        
+        After grading:
+        - Provide a helpful, constructive explanation for your evaluation addressed directly to the user.
+        - If the answer is correct, you may still suggest ways make it even stronger.
+        
+        **Output format (strict):**
         \`\`\`json
         {
-        "evaluation": "correct | partiallyCorrect | incorrect",
-        "explanation": "string"
+          "evaluation": "correct | partiallyCorrect | incorrect",
+          "explanation": "string"
         }
         \`\`\`
         `;

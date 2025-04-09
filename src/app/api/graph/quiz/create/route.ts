@@ -117,33 +117,50 @@ export async function POST(req: Request) {
 
         **Your task:**
         - Generate exactly ${numQuestions} questions that test meaningful understanding of the concepts and their relationships.
-        
-        - For each question:
-            - Write a clear and specific "hint" that meaningfully helps someone who is stuck answer the question.
-                - Hints must be specific and meaningful, as if you were a teacher trying to help a student.
-                - Hints must not tell the user to look at external information, including the concept map.
-                - **Hints must not reveal the answer directly**.
-                - **Avoid vague or unhelpful hints.**
-            - Write an "exampleAnswer" that gives a concise example of a correct answer.
 
-        - The questions should be appropriately challenging based on the requested difficulty:
-        - "Easy" → Recall definitions or simple relationships.
-        - "Medium" → Apply concepts to examples or explain connections.
-        - "Hard" → Analyze, compare, or synthesize multiple concepts.
-        - "Expert" → Deep reasoning, edge cases, or critical thinking questions.
-        - **Avoid duplicating questions or asking trivial facts.**
+        **Question guidelines:**
+        - Questions must be clear, specific, and unambiguous.
+        - Questions must clearly state what the user should do: 
+        - Example: "List two advantages of..." / "Explain how X relates to Y" / "Compare A and B"
+        - Avoid broad, vague prompts like "Describe" or "Explain" without direction.
+        - The answer must not ask the user to look at external sources, including the concept map.
+        - Target meaningful thinking, not trivia memorization.
+
+        **Hint guidelines:**
+        - Write a helpful hint for each question that would assist a stuck user.
+        - Hints must be specific and targeted.
+        - Hints must not reveal the answer directly.
+        - Hints must not tell the user to "look at the concept map" or use external resources.
+        - Hints should guide thinking, not state facts.
+
+        **Example Answer guidelines:**
+        - Provide a concise example of a correct answer.
+        - Answers can differ in wording, but must meaningfully address the question.
+
+        **Difficulty settings:**
+        - "Easy" → Recall simple facts, definitions, or direct relationships.
+        - "Medium" → Apply knowledge to examples or explain straightforward connections.
+        - "Hard" → Analyze, synthesize, or compare multiple concepts.
+        - "Expert" → Critical thinking, edge cases, or deeper reasoning tasks.
+
+        **Avoid:**
+        - Duplicated questions
+        - Trivial questions
+        - Repeating the same concept multiple times
 
         **Output Format (strict):**
         \`\`\`json
         {
-            "questions": [
-                {
-                "question": "string",
-                "hint": "string",
-                "exampleAnswer": "string"
-                }
-            ]
-        }`;
+        "questions": [
+            {
+            "question": "string",
+            "hint": "string",
+            "exampleAnswer": "string"
+            }
+        ]
+        }
+        \`\`\`
+        `;
 
         // Send request for quiz generation
         // Will validate against quiz schema and fail if response violates the schema

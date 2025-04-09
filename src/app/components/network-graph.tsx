@@ -1110,7 +1110,7 @@ export default function NetworkGraph({
                     {quizLoading ? (
                         <div className="flex flex-col items-center justify-center h-48">
                             <Loader className="animate-spin w-12 h-12 text-gray-600" />
-                            <p className="mt-4 text-gray-600">Generating quiz...</p>
+                            <p className="mt-4 text-gray-600 mb-6">Generating quiz...</p>
                         </div>
                     ) : (
                         <>
