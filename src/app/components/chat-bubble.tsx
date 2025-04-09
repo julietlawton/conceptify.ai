@@ -7,10 +7,11 @@ import 'katex/dist/katex.min.css';
 import rehypeHighlight from "rehype-highlight";
 import { Message } from "ai";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { ArrowRightEndOnRectangleIcon, ArrowPathIcon } from "@heroicons/react/24/solid";
+import { ArrowRightEndOnRectangleIcon } from "@heroicons/react/24/solid";
 import { CheckIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 import { CognitionIcon } from "@/app/ui/icons";
 import { mdxComponents } from "@/app/lib/mdxComponents";
+import { Loader } from "lucide-react";
 
 // Chat bubble component
 export function ChatBubble({
@@ -81,7 +82,7 @@ export function ChatBubble({
                             >
                                 {/* Show a loading spinner only for the clicked button when generation is in progress */}
                                 {addingToGraphMessageId === msg.id ? (
-                                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                                    <Loader className="w-4 h-4 animate-spin" />
                                 ) : (
                                     <>
                                         <ArrowRightEndOnRectangleIcon className="w-4 h-4" />

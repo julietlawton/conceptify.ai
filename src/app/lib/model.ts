@@ -160,3 +160,97 @@ export async function generateGraphFromMessage(requestBody: {
   const newGraphData: KnowledgeGraph = await response.json();
   return newGraphData;
 }
+
+// Helper function for calling api/graph/quiz/create route for structured quiz creation
+export async function generateQuizFromGraph(requestBody: {
+  graphData: {
+    nodes: string[];
+    links: { source: string; target: string; label: string }[];
+  };
+  difficulty: string;
+  numQuestions: number;
+}, isDemoActive: boolean, apiKey: string | null, fingerprintId: string | null) {
+  // Get model provider from saved settings
+  const selectedProvider = localStorage.getItem("selectedProvider");
+
+  // If the demo is active, use openai as the model provider otherwise use the user's preference
+  let selectedGraphModel;
+  if (!isDemoActive) {
+    selectedGraphModel = MODEL_PROVIDERS[selectedProvider as keyof typeof MODEL_PROVIDERS].graphModel;
+  }
+  else {
+    selectedGraphModel = MODEL_PROVIDERS["openai"].graphModel;
+  }
+
+  // Await response
+  const response = await fetch("/api/graph/quiz/create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...requestBody,
+      selectedProvider,
+      selectedGraphModel,
+      isDemoActive: isDemoActive,
+      apiKey: isDemoActive ? null : apiKey,
+      fingerprintId: fingerprintId
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const errorMsg = body?.error || `Unexpected error: ${response.status}`;
+    throw new Error(errorMsg);
+  }
+
+  // If response was ok, send quiz data
+  const quizData = await response.json();
+  return quizData;
+}
+
+
+// Helper function for calling api/graph/quiz/validate route for validating quiz answer
+export async function checkQuizAnswer(requestBody: {
+  question: string;
+  userAnswer: string;
+  exampleAnswer: string;
+}, isDemoActive: boolean, apiKey: string | null, fingerprintId: string | null) {
+  // Get model provider from saved settings
+  const selectedProvider = localStorage.getItem("selectedProvider");
+
+  // If the demo is active, use openai as the model provider otherwise use the user's preference
+  let selectedGraphModel;
+  if (!isDemoActive) {
+    selectedGraphModel = MODEL_PROVIDERS[selectedProvider as keyof typeof MODEL_PROVIDERS].graphModel;
+  }
+  else {
+    selectedGraphModel = MODEL_PROVIDERS["openai"].graphModel;
+  }
+
+  // Await response
+  const response = await fetch("/api/graph/quiz/validate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...requestBody,
+      selectedProvider,
+      selectedGraphModel,
+      isDemoActive: isDemoActive,
+      apiKey: isDemoActive ? null : apiKey,
+      fingerprintId: fingerprintId
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const errorMsg = body?.error || `Unexpected error: ${response.status}`;
+    throw new Error(errorMsg);
+  }
+
+  // If response was ok, return validation result
+  const validationResult = await response.json();
+  return validationResult;
+}

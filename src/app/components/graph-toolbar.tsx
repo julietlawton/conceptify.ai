@@ -12,7 +12,7 @@ import {
     ArrowPathRoundedSquareIcon,
     MagnifyingGlassIcon
 } from "@heroicons/react/24/solid"
-import { ArrowUturnLeftIcon, ArrowUturnRightIcon, LightBulbIcon } from "@heroicons/react/24/outline";
+import { ArrowUturnLeftIcon, ArrowUturnRightIcon, DocumentTextIcon, LightBulbIcon } from "@heroicons/react/24/outline";
 import { UIGraphNode, ColorPalette } from "@/app/lib/types";
 import { inter } from "@/app/ui/fonts";
 import { ColorGradientIcon } from "@/app/ui/icons";
@@ -36,6 +36,7 @@ interface GraphToolbarProps {
     undoStackLength: number;
     redoStackLength: number;
     onGenerateSummary: () => void;
+    onGenerateQuiz: () => void;
 }
 
 // Helper function to close search or color palette picker when you click outside of them
@@ -78,7 +79,8 @@ export default function GraphToolbar({
     onRedo,
     undoStackLength,
     redoStackLength,
-    onGenerateSummary
+    onGenerateSummary,
+    onGenerateQuiz
 }: GraphToolbarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -354,11 +356,27 @@ export default function GraphToolbar({
                                 size="icon"
                                 disabled={!nodes || nodes.length === 0}
                             >
-                                <LightBulbIcon />
+                                <DocumentTextIcon />
                                 <span className="sr-only">Generate Summary</span>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>Generate Summary</TooltipContent>
+                    </Tooltip>
+                    
+                    {/* Quiz button */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                onClick={onGenerateQuiz}
+                                variant="outline"
+                                size="icon"
+                                disabled={!nodes || nodes.length === 0}
+                            >
+                                <LightBulbIcon />
+                                <span className="sr-only">Quiz Me</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Quiz Me</TooltipContent>
                     </Tooltip>
                     
                     {/* If undo stack is not empty, show undo button */}

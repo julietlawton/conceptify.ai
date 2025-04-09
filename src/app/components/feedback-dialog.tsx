@@ -63,8 +63,9 @@ export default function FeedbackDialog({
                 </DialogHeader>
                 {/* While loading, show spinner */}
                 {loading ? (
-                    <div className="flex justify-center pb-8">
+                    <div className="flex flex-col items-center justify-center h-48">
                         <Loader className="animate-spin w-12 h-12 text-gray-600" />
+                        <p className="mt-4 text-gray-600">Sending feedback...</p>
                     </div>
                     // If message was sent successfuly, show success message
                 ) : status === "success" ? (

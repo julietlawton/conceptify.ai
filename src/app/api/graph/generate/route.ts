@@ -126,11 +126,13 @@ summarizing key information and concepts and the relationships between them.
     - If the concept involves mathematical notation or formulas, YOU MUST include them using LaTeX (wrap inline math with $...$ and block math with $$...$$).
     - If a programming example is relevant, YOU MUST include it in a fenced code block.
 3. Define relationships between concepts using "source" and "target" fields (using the concept names).
-4. **Do not generate numerical IDs or use numbers as references.**
-5. If a concept already exists, do not duplicate it.
-6. **Limit each node to a maximum of 5 edges/relationships.** If further clarity is needed, create additional nodes.
-7. **Ensure every node is connected to the graph by an edge.**
-8. Format your response strictly as JSON with exactly two keys: "nodes" and "links".
+   - If multiple new concepts are related to each other, create a new intermediate node to group them meaningfully.
+   - Prefer small clusters of related nodes over connecting all new nodes to the same parent.
+   - Avoid hub-and-spoke structures unless conceptually necessary.
+4. Each node MUST have at least one edge.
+5. **Do not generate numerical IDs or use numbers as references.**
+6. If a concept already exists, do not duplicate it.
+7. Format your response strictly as JSON with exactly two keys: "nodes" and "links".
 
 **Existing Graph:**
 \`\`\`json
@@ -146,15 +148,18 @@ Your goal is to create a living history of the conversation by summarizing key i
 
 **Your task**:
 1. Identify the most important information from the message and generate as many nodes as needed.
-2. For each new node, provide a detailed description in Markdown (using multiple paragraphs followed by newlines for clarity, if needed) that captures the unique, relevant information from the message.
+2. Create a parent node based on the central conversation topic
+3. For each new node, provide a detailed description in Markdown (using multiple paragraphs followed by newlines for clarity, if needed) that captures the unique, relevant information from the message.
     - **Avoid generic or obvious information that would not be helpful to the user. For example, if the user asks for a visualization using matplotlib, it is not helpful to create a node that defines what matplotlib is.**
     - For every example provided in the message (such as a code snippet or math problem) that you reference, include the exact text for that example in your node description. Do not generate or modify examples that are not explicitly given in the message.
     - If the concept involves mathematical notation or formulas, YOU MUST include them using LaTeX (wrap inline math with $...$ and block math with $$...$$).
     - If a programming example is relevant, YOU MUST include it in a fenced code block.
-3. Define relationships between concepts using "source" and "target" fields (using the concept names).
-4. **Do not generate numerical IDs or use numbers as references.**
-5. **Ensure every node is connected to the graph by an edge.**
-6. **Limit each node to a maximum of 5 edges/relationships.** (If necessary for clarity, create additional nodes.)
+4. Define relationships between concepts using "source" and "target" fields (using the concept names).
+   - If multiple new concepts are related to each other, create a new intermediate node to group them meaningfully.
+   - Prefer small clusters of related nodes over connecting all new nodes to the same parent.
+   - Avoid hub-and-spoke structures unless conceptually necessary.
+5. Each node MUST have at least one edge.
+6. **Do not generate numerical IDs or use numbers as references.**
 7. Format your response strictly as JSON with exactly two keys: "nodes" and "links".
 
 

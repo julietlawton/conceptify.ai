@@ -17,13 +17,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { InformationCircleIcon } from "@heroicons/react/24/outline";
+import { Loader } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { inter } from "@/app/ui/fonts";
 import { useChat, useCurrentGraph } from "@/app/context/ChatContext";
+import { useApiKey } from "@/app/context/APIContext";
 import { colorPaletteById } from "@/app/ui/color-palettes";
 import { NodeTooltip } from "@/app/components/node-tooltip";
 import SummaryCard from "@/app/components/summary-card";
 import GraphToolbar from "@/app/components/graph-toolbar";
+import QuizScreen from "@/app/components/quiz-screen";
+import toast from "react-hot-toast";
+import { generateQuizFromGraph } from "@/app/lib/model";
 import {
     KnowledgeGraph,
     UIGraphNode,
@@ -35,7 +40,6 @@ import {
 
 const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), { ssr: false })
 import type { NodeObject, LinkObject, ForceGraphMethods } from 'react-force-graph-2d';
-
 
 // Custom type for updating node data (used for adding and editing nodes)
 interface NewNodeData {
@@ -94,6 +98,9 @@ export default function NetworkGraph({
     // Graph context
     const { graphData, updateConversationGraphData } = useCurrentGraph();
 
+    // API key + demo context
+    const { apiKey, isDemoActive, userFingerprint, demoUsesRemaining, setDemoUsesRemaining } = useApiKey();
+
     // UI Graph state - used to separate pure graph (data only) and UI concerns
     // Initialize by cloning current graph data
     const [uiGraphData, setUiGraphData] = useState<UIGraph>(() => {
@@ -122,6 +129,20 @@ export default function NetworkGraph({
     const [isSummaryCardVisible, setIsSummaryCardVisible] = useState(false);
     const [isSummaryLoading, setIsSummaryLoading] = useState(false);
     const [summaryContent, setSummaryContent] = useState<string[]>([]);
+
+    // Quiz generation state
+    const [isQuizConfigOpen, setIsQuizConfigOpen] = useState(false);
+    const [quizDifficulty, setQuizDifficulty] = useState("Easy");
+    const [numQuizQuestions, setNumQuizQuestions] = useState(5);
+    const [isQuizScreenOpen, setIsQuizScreenOpen] = useState(false);
+    const [quizData, setQuizData] = useState<{
+        questions: {
+            question: string;
+            hint: string;
+            exampleAnswer: string;
+        }[];
+    } | null>(null);
+    const [quizLoading, setQuizLoading] = useState(false);
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
         const char = event.key.toLowerCase();
@@ -685,6 +706,71 @@ export default function NetworkGraph({
         }, 400);
     };
 
+    // Handle quiz question generation
+    const handleGenerateQuiz = async () => {
+        try {
+            setQuizLoading(true);
+            // Make existing graph LLM-friendly
+            // Remove IDs from the graph and replace them with string names
+            const strippedGraph = graphData
+                ? {
+                    nodes: graphData.nodes.map(node => node.name),
+
+                    links: graphData.links.map(link => ({
+                        source: graphData.nodes.find(n => n.id === link.source)?.name || "",
+                        target: graphData.nodes.find(n => n.id === link.target)?.name || "",
+                        label: link.label
+                    }))
+                }
+                : null;
+
+            if (!strippedGraph) {
+                return;
+            }
+
+            // Create request body with stripped graph and quiz config
+            const requestBody =
+            {
+                graphData: strippedGraph,
+                difficulty: quizDifficulty,
+                numQuestions: numQuizQuestions
+            };
+
+            // Check that either the api key is set or the demo is active before sending request
+            if (!apiKey && !isDemoActive) {
+                toast.error("No API key found. Please add your API key in Settings.")
+                return;
+            }
+
+            // Await quiz data response
+            const quizData = await generateQuizFromGraph(requestBody, isDemoActive, apiKey, userFingerprint);
+
+            if (!quizData) {
+                setQuizLoading(false);
+                return;
+            }
+
+            // Set the quiz data and launch the quiz
+            setQuizData(quizData);
+            setIsQuizScreenOpen(true);
+
+            // Clost the quiz config
+            setQuizLoading(false);
+            setIsQuizConfigOpen(false);
+
+            // If demo is active, decrement demo uses remaining
+            // NOTE: This is for the UI only, demo usage is enforced server side
+            if (isDemoActive) {
+                setDemoUsesRemaining(Math.max(0, demoUsesRemaining - 1));
+            }
+
+        } catch (error) {
+            toast.error("Quiz generation failed. Please try again.");
+            console.error("Error generating quiz", error);
+            setQuizLoading(false);
+        }
+    };
+
     return (
         <div id="graph-container" ref={graphRef} className="h-full w-full flex flex-col relative">
             {/* Graph toolbar */}
@@ -706,6 +792,7 @@ export default function NetworkGraph({
                 undoStackLength={undoStackLength}
                 redoStackLength={redoStackLength}
                 onGenerateSummary={handleGenerateSummary}
+                onGenerateQuiz={() => setIsQuizConfigOpen(true)}
             />
             <div className={`flex-grow transition-opacity duration-400 ${isGraphVisible ? "visible opacity-100" : "invisible opacity-0"}`}>
                 {/* Force graph simulation */}
@@ -737,7 +824,7 @@ export default function NetworkGraph({
                     nodeCanvasObject={(node, ctx, globalScale) => {
                         // Set font for node labels
                         const label = node.name;
-                        const fontSize = 14 / globalScale;
+                        const fontSize = 13 / globalScale;
                         ctx.font = `600 ${fontSize}px ${inter.style.fontFamily}`;
 
                         // Maximum width allowed for a line
@@ -777,11 +864,14 @@ export default function NetworkGraph({
                         });
 
                         // Set node size based on the maximum wrapped line width
-                        const nodeSize = Math.max(10, maxLineWidth / 2) + 4;
+                        const padding = 6;
+                        const nodeSize = Math.max(10, maxLineWidth / 2) + padding;
 
                         // Draw the node as a circle
                         ctx.beginPath();
                         ctx.arc(node.x ?? 0, node.y ?? 0, nodeSize, 0, 2 * Math.PI);
+
+                        // Color the node
                         ctx.fillStyle = nodeColor(node);
                         ctx.fill();
 
@@ -805,12 +895,18 @@ export default function NetworkGraph({
                             ctx.fillText(line, node.x ?? 0, startY + i * lineHeight);
                         });
 
-                        // Highlight node
+                        // Default node border
+                        ctx.strokeStyle = "rgba(0, 0, 0, 0.05)";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+
+                        // Highlight node (overrides border)
                         if (highlightNodes.has(node.id)) {
                             ctx.strokeStyle = paletteNodeHighlightColor;
                             ctx.lineWidth = 1;
                             ctx.stroke();
                         }
+
                     }}
                     linkDirectionalParticles={4}
                     linkDirectionalParticleWidth={2}
@@ -850,7 +946,7 @@ export default function NetworkGraph({
                                 className="col-span-3"
                             />
                         </div>
-                        
+
                         {/* Node info text area */}
                         <div className="grid grid-cols-4 items-start gap-4">
                             <div className="flex items-start justify-end gap-1">
@@ -877,7 +973,7 @@ export default function NetworkGraph({
                                 placeholder="Supports Markdown, LaTeX, code blocks, and images."
                             />
                         </div>
-                        
+
                         {/* Node edges section */}
                         <div className="grid grid-cols-4 items-start gap-4">
                             <div className="flex items-center justify-end gap-1">
@@ -992,7 +1088,7 @@ export default function NetworkGraph({
             </Dialog>
 
             {/* Floating hallucination disclaimer text for the bottom of the graph container */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-gray-600 italic px-4 py-2 rounded text-sm w-[70%] w-auto text-center">
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-gray-600 italic px-4 py-4 rounded text-sm w-[80%] w-auto text-center">
                 LLMs can {" "}
                 <a
                     href="https://www.lakera.ai/blog/guide-to-hallucinations-in-large-language-models"
@@ -1004,6 +1100,70 @@ export default function NetworkGraph({
                 </a>. Remember to fact check generated content.
             </div>
 
+            {/* Quiz creation dialog */}
+            <Dialog open={isQuizConfigOpen} onOpenChange={setIsQuizConfigOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create Quiz</DialogTitle>
+                        <DialogDescription>Create a quiz to test your recall.</DialogDescription>
+                    </DialogHeader>
+                    {quizLoading ? (
+                        <div className="flex flex-col items-center justify-center h-48">
+                            <Loader className="animate-spin w-12 h-12 text-gray-600" />
+                            <p className="mt-4 text-gray-600">Generating quiz...</p>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="space-y-4 pt-4">
+                                {/* Difficulty selector */}
+                                <div className="flex flex-col space-y-1">
+                                    <Label>Difficulty</Label>
+                                    <Select
+                                        value={quizDifficulty}
+                                        onValueChange={setQuizDifficulty}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select difficulty" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Easy">Easy</SelectItem>
+                                            <SelectItem value="Medium">Medium</SelectItem>
+                                            <SelectItem value="Hard">Hard</SelectItem>
+                                            <SelectItem value="Expert">Expert</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Number of questions input */}
+                                <div className="flex flex-col space-y-1">
+                                    <Label>Number of Questions</Label>
+                                    <Input
+                                        type="number"
+                                        value={numQuizQuestions}
+                                        min={1}
+                                        max={20}
+                                        onChange={(e) => setNumQuizQuestions(Number(e.target.value))}
+                                    />
+                                    {(numQuizQuestions < 1 || numQuizQuestions > 20) && (
+                                        <p className="text-sm text-red-500">
+                                            Number of questions must be between 1 and 20.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <DialogFooter className="sticky bottom-0 pt-2">
+                                <Button
+                                    onClick={handleGenerateQuiz}
+                                    disabled={numQuizQuestions < 1 || numQuizQuestions > 20}
+                                >
+                                    Create Quiz
+                                </Button>
+                            </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+
             {/* Graph summary card */}
             {isSummaryCardVisible && (
                 <SummaryCard
@@ -1011,6 +1171,15 @@ export default function NetworkGraph({
                     setIsSummaryCardVisible={setIsSummaryCardVisible}
                     summaryTitle={(currentConversationId && getConversationTitle(currentConversationId)) || "Conversation Summary"}
                     summaryContent={summaryContent}
+                />
+            )}
+
+            {/*  Graph quiz */}
+            {isQuizScreenOpen && quizData && (
+                <QuizScreen
+                    isQuizOpen={isQuizScreenOpen}
+                    setIsQuizOpen={setIsQuizScreenOpen}
+                    quizData={quizData}
                 />
             )}
         </div>
