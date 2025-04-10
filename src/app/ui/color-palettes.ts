@@ -6,7 +6,7 @@ export const ColorPalettes: ColorPalette[] = [
         id: "plasma",
         name: "Plasma",
         colors: [
-            " #fcce25",
+            " #f3c615",
             " #fca636",
             " #f2844b",
             " #e16462",
@@ -25,15 +25,15 @@ export const ColorPalettes: ColorPalette[] = [
         id: "viridis",
         name: "Viridis",
         colors: [
-            " #ead51d",
-            " #b5de2b",
-            " #6ece58",
-            " #35b779",
-            " #1f9e89",
-            " #26828e",
-            " #31688e",
-            " #3e4989",
-            " #482878",
+            " #bddf26",
+            " #7ad151",
+            " #44bf70",
+            " #22a884",
+            " #21918c",
+            " #2a788e",
+            " #355f8d",
+            " #414487",
+            " #482475",
             " #440154",
         ],
         nodeHighlight: " #f6ff00",
@@ -44,14 +44,14 @@ export const ColorPalettes: ColorPalette[] = [
         id: "balloons",
         name: "Balloons",
         colors: [
-            " #378d00",
-            " #86cd0a",
-            " #df5734",
-            " #9c0096",
             " #ff7f00",
-            " #eccd1d",
+            " #ffd60b",
+            " #d22657",
+            " #9c0096",
+            " #5833C8",
+            " #86cd0a",
+            " #059953",
             " #20b2ad",
-            " #e37bd0",
             " #129edf",
             " #1912df",
         ],
@@ -77,6 +77,44 @@ export const ColorPalettes: ColorPalette[] = [
         nodeHighlight: " #f6ff00",
         linkHighlight: " #FFA500",
         textColor: "white"
+    },
+    {
+        id: "papyrus",
+        name: "Papyrus",
+        colors: [
+            " #e8e8e4",
+            " #e9edc9",
+            " #ccd5ae",
+            " #d8e2dc",
+            " #fefae0",
+            " #faedcd",
+            " #ffe5d9",
+            " #fae1dd",
+            " #fcd5ce",
+            " #ffd7ba"
+        ],
+        nodeHighlight: " #f6ff00",
+        linkHighlight: " #FFA500",
+        textColor: "#555"
+    },
+    {
+        id: "pastel",
+        name: "Pastels",
+        colors: [
+            " #fbf8cc",
+            " #fde4cf",
+            " #ffcfd2",
+            " #f1c0e8",
+            " #cfbaf0",
+            " #a3c4f3",
+            " #90dbf4",
+            " #8eecf5",
+            " #98f5e1",
+            " #b9fbc0"
+        ],
+        nodeHighlight: " #f6ff00",
+        linkHighlight: " #FFA500",
+        textColor: "#555"
     },
     {
         id: "aster",
@@ -136,25 +174,6 @@ export const ColorPalettes: ColorPalette[] = [
         textColor: "white"
     },
     {
-        id: "popart",
-        name: "Solar Flare",
-        colors: [
-            " #ffd926",
-            " #ffb24d",
-            " #ff8b74",
-            " #ff649b",
-            " #e63cc3",
-            " #a915ea",
-            " #6b00ff",
-            " #2e00ff",
-            " #00009d",
-            " #000000"
-        ],
-        nodeHighlight: " #f6ff00",
-        linkHighlight: " #FFA500",
-        textColor: "white"
-    },
-    {
         id: "teahouse",
         name: "Tea House",
         colors: [
@@ -172,25 +191,6 @@ export const ColorPalettes: ColorPalette[] = [
         nodeHighlight: " #f6ff00",
         linkHighlight: " #FFA500",
         textColor: "white"
-    },
-    {
-        id: "pastel",
-        name: "Pastels",
-        colors: [
-            " #fbf8cc",
-            " #fde4cf",
-            " #ffcfd2",
-            " #f1c0e8",
-            " #cfbaf0",
-            " #a3c4f3",
-            " #90dbf4",
-            " #8eecf5",
-            " #98f5e1",
-            " #b9fbc0"
-        ],
-        nodeHighlight: " #f6ff00",
-        linkHighlight: " #FFA500",
-        textColor: "#555"
     },
     {
         id: "ocean",
@@ -212,19 +212,19 @@ export const ColorPalettes: ColorPalette[] = [
         textColor: "white"
     },
     {
-        id: "cherry",
-        name: "Cherry",
+        id: "ember",
+        name: "Ember",
         colors: [
-            " #f96044",
-            " #f34c37",
-            " #ed392b",
-            " #dd2a25",
-            " #cf1c1f",
-            " #be151a",
-            " #af1117",
-            " #9a0c14",
-            " #800610",
-            " #67000d"
+            " #ff1744",
+            " #ff3d00",
+            " #ff6d00",
+            " #ff4081",
+            " #f50057",
+            " #6f003f",
+            " #580303",
+            " #310638",
+            " #3a012e",
+            " #000000",
         ],
         nodeHighlight: " #f6ff00",
         linkHighlight: " #FFA500",
