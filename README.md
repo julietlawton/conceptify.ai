@@ -13,9 +13,8 @@ Conceptify is a ChatGPT-like app that lets you build interactive concept maps fr
 
 ## Demo
 
-![demo](https://github.com/user-attachments/assets/356facf8-0cd6-4955-983e-0f70f00a8eb3)
+https://github.com/user-attachments/assets/356facf8-0cd6-4955-983e-0f70f00a8eb3
 
-  
 ## Features
 
 - Create colorful, interactive concept maps from AI assistant messages that grow organically as you learn
