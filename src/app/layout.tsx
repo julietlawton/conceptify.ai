@@ -10,7 +10,7 @@ export const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: "Conceptify.AI",
-  description: "Conceptify.AI lets you build interactive concept maps from your conversations with AI assistants - supporting meaningful learning by making it easier to visually organize ideas and recall information.",
+  description: "Conceptify.AI lets you build interactive concept maps from your conversations with AI - supporting meaningful learning by making it easier to visually organize ideas and recall information.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

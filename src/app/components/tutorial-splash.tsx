@@ -30,7 +30,7 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
             content: (
                 <div className="space-y-4">
                     <p>
-                        Conceptify.AI lets you build interactive concept maps from your conversations with AI assistants - supporting meaningful learning by making it easier to visually organize ideas and recall information.
+                        Conceptify lets you build interactive concept maps from your conversations with AI - supporting meaningful learning by making it easier to visually organize ideas and recall information.
                     </p>
                     <p>This tutorial will guide you through the main features of the app.</p><br></br>
                     <img
@@ -71,7 +71,7 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                     </p>
                     <ul className="list-disc pl-6">
                         <li>
-                            <strong>Add a message to the concept map:</strong> After sending a message, click &quot;Add to Concept Map&quot; to extract concepts from that message.
+                            <strong>Add a Message to the Concept Map:</strong> After sending a message, click &quot;Add to Concept Map&quot; to extract concepts from that message.
                             If the chat doesn&apos;t have a concept map yet, one will be created automatically; otherwise, the new concepts will be added to the existing map.
                         </li><br></br>
                         <img
@@ -80,7 +80,7 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                             className="w-full max-w-xl mx-auto rounded shadow-md"
                         /><br></br>
                         <li>
-                            <strong>Create an empty concept map:</strong> To create an empty concept map, click the &quot;Create Empty Concept Map&quot; button.
+                            <strong>Create an Empty Concept Map:</strong> To create an empty concept map, click the &quot;Create Empty Concept Map&quot; button.
                             Use this option if you want to begin building a concept map from scratch.
                         </li><br></br>
                         <img
@@ -103,21 +103,37 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                         <strong>Pan:</strong> Click and drag on the background to move around the concept map.
                     </p>
                     <p>
-                        <strong>Drag Nodes:</strong> Click and drag on any node to reposition it. Drag and hold to freeze a node, release to reset.
+                        <strong>View Node Info:</strong> Hover over a node to see its detailed information card. Stop hovering to dismiss the card.
                     </p>
                     <p>
-                        <strong>View Node Info:</strong> Hover over a node to see its detailed information card. Stop hovering to dismiss the card.
+                        <strong>Drag Nodes:</strong> Click and drag on any node to reposition it. Drag and hold to freeze a node, release to reset.
                     </p>
                     <img
                         src="/gifs/graphnav.gif"
                         alt="Concept Map Navigation"
                         className="w-full max-w-xl mx-auto rounded shadow-md"
                     />
+                    <p>
+                        <strong>Search:</strong> To search for a node, click the search icon in the toolbar and enter its name in the search bar. Selecting a node in the search results will jump to its position.
+                    </p>
+                    <img
+                        src="/gifs/search.gif"
+                        alt="Node Search"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
+                    <p>
+                        <strong>Fullscreen and Reset View:</strong> Click the fullscreen button in the toolbar to put the concept map in fullscreen. Click the reset view button to fit the concept map to the concept map window.
+                    </p>
+                    <img
+                        src="/gifs/fullscreen.gif"
+                        alt="Fullscreen"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    /><br></br>
                 </div>
             ),
         },
         {
-            title: "Using the Concept Map Toolbar",
+            title: "Customizing the Concept Map",
             content: (
                 <div className="space-y-4">
                     <p>
@@ -130,37 +146,37 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                         className="w-full max-w-xl mx-auto rounded shadow-md"
                     />
                     <p>
-                        <strong>Fullscreen and Reset View:</strong> Click the fullscreen button to put the concept map in fullscreen. Click the reset view button to fit the concept map to the concept map window.
-                    </p>
-                    <img
-                        src="/gifs/fullscreen.gif"
-                        alt="Fullscreen"
-                        className="w-full max-w-xl mx-auto rounded shadow-md"
-                    />
-                    <p>
-                        <strong>Search:</strong> To search for a node, enter its name in the search bar. Selecting a node in the search results will jump to its position.
-                    </p>
-                    <img
-                        src="/gifs/nodesearch.gif"
-                        alt="Node Search"
-                        className="w-full max-w-xl mx-auto rounded shadow-md"
-                    />
-                    <p>
                         <strong>Color Palette Selection:</strong> Use the color palette picker to change the color palette for the concept map.
                     </p>
                     <img
                         src="/gifs/colorselection.gif"
                         alt="Color Selection"
                         className="w-full max-w-xl mx-auto rounded shadow-md"
-                    />
+                    /><br></br>
+                </div>
+            ),
+        },
+        {
+            title: "Summarize and Recall",
+            content: (
+                <div className="space-y-4">
                     <p>
-                        <strong>Generating a Summary:</strong> To collate all of the node information into a single summary, click the lightbulb button. The summary can be exported as a text file or a PDF.
+                        <strong>Generating a Quiz:</strong> Test your recall of information in the concept map by clicking the lightbulb button to create a quiz. You can choose the number of questions in the quiz, its difficulty level, and what concepts you want excluded from the questions.
                     </p>
                     <img
-                        src="/gifs/generatesummary.gif"
-                        alt="Color Selection"
+                        src="/gifs/quiz.gif"
+                        alt="Quiz Generation"
                         className="w-full max-w-xl mx-auto rounded shadow-md"
-                    /><br></br>
+                    />
+                    <p>
+                        <strong>Generating a Summary:</strong> To collate all of the node information into a single summary, click the note button in the toolbar. The summary can be exported as a text file or a PDF.
+                    </p>
+                    <img
+                        src="/gifs/summary.gif"
+                        alt="Summary Generation"
+                        className="w-full max-w-xl mx-auto rounded shadow-md"
+                    />
+                    <br></br>
                 </div>
             ),
         },
@@ -235,7 +251,7 @@ export default function TutorialSplash({ onClose }: { onClose: () => void }) {
                 <div className="relative flex-1 overflow-hidden">
                     <CardContent
                         ref={scrollContainerRef}
-                        className="overflow-y-auto px-6 space-y-4 h-full pr-2 mr-2"
+                        className="overflow-y-auto px-6 space-y-4 h-full pr-2 mr-3"
                         style={{ maxHeight: "calc(90vh - 150px)" }}>
                         {tutorialSteps[currentStep].content}
                     </CardContent>

@@ -412,7 +412,7 @@ export default function GraphToolbar({
                 {/* Delete graph button */}
                 <div className="flex items-center">
                     <button
-                        className="flex items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
+                        className="flex flex-shrink-0 items-center gap-1 px-2 py-1 text-white text-sm bg-red-600 rounded-md border hover:bg-red-400"
                         onClick={() => setIsDialogOpen(true)}
                     >
                         <span>Delete Map</span>

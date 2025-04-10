@@ -783,6 +783,7 @@ export default function NetworkGraph({
             setQuizLoading(false);
             setIsQuizConfigOpen(false);
             setExcludedQuizNodes([]);
+            setQuizConfigSearchTerm("");
 
             // If demo is active, decrement demo uses remaining
             // NOTE: This is for the UI only, demo usage is enforced server side
@@ -1132,6 +1133,7 @@ export default function NetworkGraph({
                 onOpenChange={(open) => {
                     setIsQuizConfigOpen(open);
                     setExcludedQuizNodes([]);
+                    setQuizConfigSearchTerm("");
                 }
                 }>
                 <DialogContent className="flex flex-col max-h-[90vh]">

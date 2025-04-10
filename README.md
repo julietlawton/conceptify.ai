@@ -62,7 +62,7 @@ pnpm run dev
 ## Future plans
 **Desktop App:** 
 
-I envision this app becoming a Electron-based desktop app with persistent storage, faster performance, and the ability to run a local concept map generation model. Local generation would allow using any model for chat without API compatibility issues.
+I envision this app becoming a Electron desktop app with persistent storage, faster performance, and the ability to run a local concept map generation model. Local generation would allow using any model for chat without API compatibility issues.
 
 **Image Uploads:**
 

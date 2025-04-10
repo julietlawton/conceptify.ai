@@ -41,9 +41,9 @@ export function ChatBubble({
         <div
             key={index}
             className={`p-3 rounded-lg ${msg.role === "user"
-                ? "max-w-xs md:max-w-md bg-gray-200 text-black self-end rounded-xl"
+                ? " w-fit max-w-[70%] bg-gray-200 text-black self-end rounded-xl"
                 : "text-gray-900"
-                }`}>
+              }`}>
             <div className="flex items-start gap-4">
                 {msg.role === "assistant" && (
                     <div className="size-8 p-1 ring-gray-300 flex items-center justify-center rounded-full ring-1 shrink-0">
