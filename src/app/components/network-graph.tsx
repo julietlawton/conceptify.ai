@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { InformationCircleIcon } from "@heroicons/react/24/outline";
+import { InformationCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Loader } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { inter } from "@/app/ui/fonts";
@@ -143,6 +143,16 @@ export default function NetworkGraph({
         }[];
     } | null>(null);
     const [quizLoading, setQuizLoading] = useState(false);
+    const [excludedQuizNodes, setExcludedQuizNodes] = useState<string[]>([]);
+    const [quizConfigSearchTerm, setQuizConfigSearchTerm] = useState("");
+
+    const toggleNodeQuizExclusion = (nodeName: string) => {
+        setExcludedQuizNodes((prev) =>
+            prev.includes(nodeName)
+                ? prev.filter((name) => name !== nodeName)
+                : [...prev, nodeName]
+        );
+    };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
         const char = event.key.toLowerCase();
@@ -714,13 +724,28 @@ export default function NetworkGraph({
             // Remove IDs from the graph and replace them with string names
             const strippedGraph = graphData
                 ? {
-                    nodes: graphData.nodes.map(node => node.name),
+                    nodes: graphData.nodes
+                        // Filter user excluded nodes
+                        .filter(node => !excludedQuizNodes.includes(node.name))
+                        .map(node => node.name),
 
-                    links: graphData.links.map(link => ({
-                        source: graphData.nodes.find(n => n.id === link.source)?.name || "",
-                        target: graphData.nodes.find(n => n.id === link.target)?.name || "",
-                        label: link.label
-                    }))
+                    links: graphData.links
+                        .filter(link => {
+                            const sourceNode = graphData.nodes.find(n => n.id === link.source);
+                            const targetNode = graphData.nodes.find(n => n.id === link.target);
+
+                            // Only keep the link if neither source nor target is excluded
+                            return (
+                                sourceNode && targetNode &&
+                                !excludedQuizNodes.includes(sourceNode.name) &&
+                                !excludedQuizNodes.includes(targetNode.name)
+                            );
+                        })
+                        .map(link => ({
+                            source: graphData.nodes.find(n => n.id === link.source)?.name || "",
+                            target: graphData.nodes.find(n => n.id === link.target)?.name || "",
+                            label: link.label
+                        }))
                 }
                 : null;
 
@@ -757,6 +782,7 @@ export default function NetworkGraph({
             // Clost the quiz config
             setQuizLoading(false);
             setIsQuizConfigOpen(false);
+            setExcludedQuizNodes([]);
 
             // If demo is active, decrement demo uses remaining
             // NOTE: This is for the UI only, demo usage is enforced server side
@@ -1101,8 +1127,14 @@ export default function NetworkGraph({
             </div>
 
             {/* Quiz creation dialog */}
-            <Dialog open={isQuizConfigOpen} onOpenChange={setIsQuizConfigOpen}>
-                <DialogContent>
+            <Dialog
+                open={isQuizConfigOpen}
+                onOpenChange={(open) => {
+                    setIsQuizConfigOpen(open);
+                    setExcludedQuizNodes([]);
+                }
+                }>
+                <DialogContent className="flex flex-col max-h-[90vh]">
                     <DialogHeader>
                         <DialogTitle>Create Quiz</DialogTitle>
                         <DialogDescription>Create a quiz to test your recall.</DialogDescription>
@@ -1116,7 +1148,7 @@ export default function NetworkGraph({
                         <>
                             <div className="space-y-4 pt-4">
                                 {/* Difficulty selector */}
-                                <div className="flex flex-col space-y-1">
+                                <div className="flex flex-col space-y-2">
                                     <Label>Difficulty</Label>
                                     <Select
                                         value={quizDifficulty}
@@ -1135,7 +1167,7 @@ export default function NetworkGraph({
                                 </div>
 
                                 {/* Number of questions input */}
-                                <div className="flex flex-col space-y-1">
+                                <div className="flex flex-col space-y-2">
                                     <Label>Number of Questions</Label>
                                     <Input
                                         type="number"
@@ -1150,11 +1182,105 @@ export default function NetworkGraph({
                                         </p>
                                     )}
                                 </div>
+
+                                {/* Exclude from quiz section */}
+                                <div className="flex flex-col space-y-1">
+                                    <Label>Concepts to Exclude</Label>
+                                    {/* Labels for currently excluded concepts */}
+                                    <div className={`flex flex-wrap gap-2 ${excludedQuizNodes.length > 0 ? "py-2" : "py-0"}`}>
+                                        {excludedQuizNodes.length <= 5 ? (
+                                            excludedQuizNodes.map((nodeName) => (
+                                                <div key={nodeName} className="bg-gray-200 text-sm px-2 py-1 rounded">
+                                                    {nodeName}
+                                                </div>
+
+                                            ))
+                                        ) : (
+                                            <>
+                                                {excludedQuizNodes.slice(0, 5).map((nodeName) => (
+                                                    <div key={nodeName} className="bg-gray-200 text-sm px-2 py-1 rounded">
+                                                        {nodeName}
+                                                    </div>
+                                                ))}
+                                                <div className="bg-gray-200 text-sm px-2 py-1 rounded">
+                                                    +{excludedQuizNodes.length - 5} more
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {/* Clear selection button */}
+                                        {excludedQuizNodes.length > 0 && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setExcludedQuizNodes([])}
+                                                className="h-5 w-5 mt-1"
+                                            >
+                                                <XMarkIcon className="h-4 w-4" />
+                                                <span className="sr-only">Clear selections</span>
+                                            </Button>
+                                        )}
+
+                                    </div>
+
+                                    {/* Concept selection list */}
+                                    <div className="border rounded-md p-4 max-h-48 overflow-y-auto">
+                                        <div className="flex flex-col space-y-1">
+                                            <div className="mb-2">
+                                                <Input
+                                                    type="text"
+                                                    placeholder="Search..."
+                                                    value={quizConfigSearchTerm}
+                                                    onChange={(e) => setQuizConfigSearchTerm(e.target.value)}
+                                                />
+                                            </div>
+                                        </div>
+                                        {/* Select All option */}
+                                        <label className="flex items-center space-x-2 mb-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={excludedQuizNodes.length === graphData.nodes.length}
+                                                onChange={() => {
+                                                    if (excludedQuizNodes.length === graphData.nodes.length) {
+                                                        // Unselect all
+                                                        setExcludedQuizNodes([]); 
+                                                    } else {
+                                                        // Select all
+                                                        setExcludedQuizNodes(graphData.nodes.map(node => node.name));
+                                                    }
+                                                }}
+                                                className="accent-black"
+                                            />
+                                            <span>(Select All)</span>
+                                        </label>
+                                        {/* Excludable concepts + toggle checkbox */}
+                                        {graphData.nodes
+                                            .filter((node) => node.name.toLowerCase().includes(quizConfigSearchTerm.toLowerCase()))
+                                            .map((node) => (
+                                                <label key={node.id} className="flex items-center space-x-2 mb-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={excludedQuizNodes.includes(node.name)}
+                                                        onChange={() => toggleNodeQuizExclusion(node.name)}
+                                                        className="accent-black"
+                                                    />
+                                                    <span>{node.name}</span>
+                                                </label>
+                                            ))}
+                                    </div>
+                                </div>
                             </div>
-                            <DialogFooter className="sticky bottom-0 pt-2">
+
+                            {/* Create quiz button */}
+                            <DialogFooter className="pt-2">
                                 <Button
                                     onClick={handleGenerateQuiz}
-                                    disabled={numQuizQuestions < 1 || numQuizQuestions > 20}
+                                    // Disable the button if an invalid number of question is selected or if all nodes are excluded
+                                    disabled={
+                                        numQuizQuestions < 1 || 
+                                        numQuizQuestions > 20 || 
+                                        excludedQuizNodes.length === graphData.nodes.length
+                                    }
                                 >
                                     Create Quiz
                                 </Button>

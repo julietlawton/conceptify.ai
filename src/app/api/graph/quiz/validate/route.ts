@@ -19,7 +19,6 @@ export async function POST(req: Request) {
         const {
             question,
             userAnswer,
-            exampleAnswer,
             selectedProvider,
             selectedGraphModel,
             isDemoActive,
@@ -28,7 +27,6 @@ export async function POST(req: Request) {
         }: {
             question: string;
             userAnswer: string;
-            exampleAnswer: string;
             selectedProvider: string;
             selectedGraphModel: string;
             isDemoActive: boolean;

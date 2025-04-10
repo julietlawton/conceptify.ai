@@ -39,7 +39,7 @@ export default function QuizScreen({
     );
 
     // Check the user answer against the question
-    const handleCheckAnswer = async (idx: number, question: string, userAnswer: string, exampleAnswer: string) => {
+    const handleCheckAnswer = async (idx: number, question: string, userAnswer: string) => {
 
         if (!apiKey && !isDemoActive) {
             toast.error("No API key found. Please add your API key in Settings.")
@@ -52,12 +52,11 @@ export default function QuizScreen({
             newProgress[idx].validationStatus = "validating";
             setQuizProgress(newProgress);
 
-            // Form request body with question + answer + expected answer
+            // Form request body with question + answer
             const requestBody =
             {
                 question: question,
-                userAnswer: userAnswer,
-                exampleAnswer: exampleAnswer
+                userAnswer: userAnswer
             };
 
             // Await validation
@@ -96,7 +95,7 @@ export default function QuizScreen({
                 </DialogHeader>
 
                 {quizData && (
-                    <div className="space-y-6 mt-4">
+                    <div className="space-y-6">
                         {quizData.questions.map((q, idx) => (
                             <div key={idx} className="bg-gray-50 border rounded-lg shadow-sm p-6 space-y-4">
                                 {/* Question */}
@@ -175,8 +174,7 @@ export default function QuizScreen({
                                                 handleCheckAnswer(
                                                     idx,
                                                     q.question,
-                                                    quizProgress[idx].userAnswer,
-                                                    q.exampleAnswer
+                                                    quizProgress[idx].userAnswer
                                                 );
                                             }}
                                         >

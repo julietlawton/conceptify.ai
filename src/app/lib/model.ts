@@ -214,7 +214,6 @@ export async function generateQuizFromGraph(requestBody: {
 export async function checkQuizAnswer(requestBody: {
   question: string;
   userAnswer: string;
-  exampleAnswer: string;
 }, isDemoActive: boolean, apiKey: string | null, fingerprintId: string | null) {
   // Get model provider from saved settings
   const selectedProvider = localStorage.getItem("selectedProvider");
