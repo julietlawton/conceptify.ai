@@ -1,6 +1,8 @@
 # <img src="https://github.com/julietlawton/conceptify.ai/blob/ae13723033846ed6a7eff220a6d7dd22fceafc9a/public/appicon.png" alt="Conceptify Icon" width="28"/> Conceptify.AI MVP
 Conceptify is a ChatGPT-like app that lets you build interactive concept maps from your conversations with AI - supporting meaningful learning by making it easier to visually organize ideas and recall information.
 
+➡️ Try it out: https://conceptify-ai.vercel.app
+
 <table align="center"><tr><td>
     <img width="1000" src="https://github.com/user-attachments/assets/2066aef1-80cd-4d64-b45e-1dc98394c655"
  />
@@ -9,7 +11,10 @@ Conceptify is a ChatGPT-like app that lets you build interactive concept maps fr
   <i>Concept map built with Conceptify for the Linear Algebra chapter in “Deep Learning” by Goodfellow et al.</i>
 </p>
 
-➡️ Try it out: https://conceptify-ai.vercel.app
+## Demo
+
+![demo](https://github.com/user-attachments/assets/356facf8-0cd6-4955-983e-0f70f00a8eb3)
+
   
 ## Features
 
